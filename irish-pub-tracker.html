@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="50 Pints">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>50 Pints — A Guinness Pub Passport</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080a08; --surface: #0e110e; --card: #111511; --card-pulled: #141c14;
+  --border: #1e281e; --border-pulled: #2e4830; --stout: #0c0f0c;
+  --cream: #f0e6c8; --foam: #e8ddb0; --foam-dim: #a89a70; --foam-ghost: #3a3020;
+  --harp: #c8a84b; --harp-light: #e4c870; --pulled: #3a7a50; --pulled-light: #5aaa78;
+  --text: #d8cead; --text-muted: #7a7058; --text-dim: #3a3428;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; font-weight: 300; min-height: 100vh; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+
+header {
+  background: var(--stout); border-bottom: 2px solid var(--harp);
+  padding: 2.8rem 2rem 2.2rem; padding-top: calc(2.8rem + env(safe-area-inset-top));
+  text-align: center; position: relative; overflow: hidden;
+}
+header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 120%, rgba(200,168,75,0.06) 0%, transparent 60%); pointer-events: none; }
+.harp-bg { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 11rem; opacity: 0.04; pointer-events: none; user-select: none; line-height: 1; }
+.header-kicker { font-weight: 900; font-size: 0.6rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--harp); margin-bottom: 0.7rem; }
+h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 900; color: var(--cream); line-height: 1.05; letter-spacing: -0.01em; margin-bottom: 0.3rem; }
+.header-tagline { font-size: 0.82rem; color: var(--foam-dim); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem; }
+.header-sub { font-size: 0.78rem; color: var(--text-muted); letter-spacing: 0.04em; margin-bottom: 2rem; font-style: italic; }
+
+.progress-wrap { max-width: 500px; margin: 0 auto; }
+.pint-progress-row { display: flex; align-items: center; gap: 1rem; }
+.pint-glass-wrap { position: relative; width: 36px; height: 52px; flex-shrink: 0; }
+.bar-wrap { flex: 1; }
+.bar-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem; text-align: right; }
+.bar-track { height: 10px; background: #1a1810; border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+.bar-fill { height: 100%; background: linear-gradient(90deg, #1a3a25 0%, var(--pulled) 40%, var(--harp) 100%); border-radius: 99px; transition: width 0.7s cubic-bezier(.4,0,.2,1); width: 0%; position: relative; }
+.bar-fill::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 8px; background: var(--foam); border-radius: 99px; opacity: 0; transition: opacity 0.3s 0.5s; }
+.bar-fill.has-pints::after { opacity: 0.7; }
+.progress-pints { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--harp); font-style: italic; line-height: 1; flex-shrink: 0; text-align: center; }
+.progress-pints small { font-size: 0.78rem; color: var(--foam-dim); font-style: normal; font-family: 'Lato', sans-serif; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-top: 0.1rem; }
+
+/* SYNC BAR */
+.sync-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.45rem 1.5rem; font-size: 0.68rem; color: var(--text-muted); text-align: center; letter-spacing: 0.07em; display: flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 28px; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; transition: background 0.3s; }
+.sync-dot.syncing { background: var(--harp); animation: blink 1s infinite; }
+.sync-dot.synced { background: var(--pulled-light); }
+.sync-dot.error { background: #a04040; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+/* CONTROLS */
+.controls {
+  padding: 1.2rem 2rem; padding-left: calc(1.2rem + env(safe-area-inset-left)); padding-right: calc(1.2rem + env(safe-area-inset-right));
+  display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center;
+  border-bottom: 1px solid var(--border); background: var(--surface);
+  position: sticky; top: 0; z-index: 100;
+}
+.search-wrap { flex: 1; min-width: 200px; position: relative; }
+.search-wrap svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); width: 16px; height: 16px; pointer-events: none; }
+input[type="text"] { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'Lato', sans-serif; font-size: 16px; padding: 0.55rem 0.75rem 0.55rem 2.25rem; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+input[type="text"]::placeholder { color: var(--text-dim); }
+input[type="text"]:focus { border-color: var(--harp); }
+.filter-btns { display: flex; gap: 0.5rem; }
+.filter-btn { background: var(--card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-muted); font-family: 'Lato', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 0 1rem; min-height: 44px; cursor: pointer; transition: all 0.15s; -webkit-appearance: none; }
+.filter-btn:hover, .filter-btn:active { border-color: var(--harp); color: var(--harp); }
+.filter-btn.active { background: var(--harp); border-color: var(--harp); color: #0a0800; }
+
+/* GRID */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1px; background: var(--border); }
+
+/* CARD */
+.pub-card { background: var(--card); padding: 1.4rem 1.3rem 1.1rem; transition: background 0.15s; position: relative; cursor: pointer; user-select: none; }
+.pub-card:active { background: #161e16; }
+.pub-card.pulled { background: var(--card-pulled); }
+.pub-card.pulled::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--harp) 0%, var(--pulled) 100%); }
+.pub-card.hidden { display: none; }
+.card-top { display: flex; align-items: flex-start; gap: 0.85rem; margin-bottom: 0.55rem; }
+.pint-check { flex-shrink: 0; width: 44px; height: 44px; border: 1.5px solid var(--border-pulled); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; background: transparent; position: relative; z-index: 2; font-size: 1.3rem; color: transparent; -webkit-appearance: none; }
+.pint-check.pulled { background: var(--stout); border-color: var(--harp); color: var(--harp); }
+.card-info { flex: 1; min-width: 0; }
+.state-label { font-size: 0.58rem; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.2rem; }
+.pub-name { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 700; color: var(--cream); line-height: 1.25; margin-bottom: 0.18rem; }
+.pub-city { font-size: 0.73rem; color: var(--text-muted); letter-spacing: 0.04em; }
+.pulled-date { font-size: 0.65rem; color: var(--harp); letter-spacing: 0.06em; margin-top: 0.12rem; font-style: italic; }
+.glass-icon { flex-shrink: 0; width: 28px; height: 40px; }
+.card-blurb { font-size: 0.74rem; color: var(--text-muted); line-height: 1.6; margin-top: 0.3rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-comment-preview { font-size: 0.7rem; color: var(--harp); font-style: italic; margin-top: 0.45rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-hint { font-size: 0.65rem; color: var(--text-dim); margin-top: 0.5rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.3rem; }
+.card-hint svg { width: 10px; height: 10px; flex-shrink: 0; }
+
+.empty-state { display: none; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-style: italic; font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+
+/* OVERLAY */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.overlay.open { opacity: 1; pointer-events: all; }
+
+/* DRAWER */
+.drawer {
+  position: fixed; right: 0; top: 0; bottom: 0; width: min(480px, 100vw);
+  background: #090c09; border-left: 1px solid var(--border);
+  z-index: 201; transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column; overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.drawer.open { transform: translateX(0); }
+.drawer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--harp), transparent); }
+.drawer-header {
+  padding: 1.5rem 1.5rem 1.2rem; padding-top: calc(1.5rem + env(safe-area-inset-top));
+  border-bottom: 1px solid var(--border); position: relative;
+  background: linear-gradient(180deg, #060806 0%, #090c09 100%); flex-shrink: 0;
+}
+.drawer-close { position: absolute; top: calc(1rem + env(safe-area-inset-top)); right: 1rem; width: 44px; height: 44px; background: transparent; border: 1px solid var(--border); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; }
+.drawer-close:active { border-color: var(--harp); color: var(--harp); }
+.drawer-close svg { width: 16px; height: 16px; }
+.drawer-state { font-size: 0.58rem; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; color: var(--harp); margin-bottom: 0.4rem; }
+.drawer-name { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--cream); line-height: 1.2; margin-bottom: 0.3rem; padding-right: 3rem; }
+.drawer-city { font-size: 0.8rem; color: var(--text-muted); }
+.pulled-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(200,168,75,0.1); border: 1px solid var(--harp); border-radius: 4px; padding: 0.22rem 0.65rem; font-size: 0.68rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--harp); margin-top: 0.7rem; }
+.drawer-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 1.4rem 1.5rem; }
+.drawer-body::-webkit-scrollbar { width: 3px; }
+.drawer-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+.section-label { font-size: 0.58rem; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.5rem; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.drawer-blurb { font-size: 0.875rem; color: var(--text); line-height: 1.74; margin-bottom: 1.5rem; }
+.guinness-note { background: #0d1209; border: 1px solid var(--border); border-left: 3px solid var(--harp); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.78rem; color: var(--foam-dim); font-style: italic; line-height: 1.6; }
+.guinness-note strong { color: var(--harp); font-style: normal; font-weight: 700; }
+.maps-row { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; }
+.map-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 52px; border-radius: 7px; font-family: 'Lato', sans-serif; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; text-decoration: none; transition: all 0.15s; border: 1px solid transparent; -webkit-appearance: none; }
+.map-btn-google { background: #0d1a10; border-color: #1a3520; color: var(--pulled-light); }
+.map-btn-google:active { background: #112016; border-color: var(--pulled); }
+.map-btn-apple { background: #1a150a; border-color: #2e2510; color: var(--harp-light); }
+.map-btn-apple:active { background: #221c0e; border-color: var(--harp); }
+.map-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.drawer-divider { height: 1px; background: var(--border); margin: 1.2rem 0; }
+.pull-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+.pull-label { font-size: 0.85rem; color: var(--text); font-weight: 400; }
+.pull-label span { display: block; font-size: 0.68rem; color: var(--text-dim); margin-top: 0.18rem; min-height: 1em; font-style: italic; }
+.toggle-switch { position: relative; width: 52px; height: 30px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider { position: absolute; inset: 0; background: #1a1810; border: 1px solid var(--border); border-radius: 99px; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+.toggle-slider::before { content: ''; position: absolute; width: 24px; height: 24px; left: 2px; top: 2px; background: var(--text-dim); border-radius: 50%; transition: all 0.2s; }
+.toggle-switch input:checked + .toggle-slider { background: #1a2e1e; border-color: var(--harp); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); background: var(--harp); }
+.drawer-textarea { width: 100%; background: #0a0c0a; border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'Lato', sans-serif; font-size: 16px; padding: 0.65rem 0.8rem; resize: vertical; min-height: 90px; outline: none; line-height: 1.6; transition: border-color 0.2s; margin-top: 0.5rem; -webkit-appearance: none; }
+.drawer-textarea::placeholder { color: var(--text-dim); font-style: italic; }
+.drawer-textarea:focus { border-color: var(--harp); }
+
+footer { text-align: center; padding: 2rem; padding-bottom: calc(2rem + env(safe-area-inset-bottom)); font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.06em; border-top: 1px solid var(--border); }
+footer a { color: var(--text-dim); text-decoration: none; }
+.footer-tagline { font-family: 'Playfair Display', serif; font-style: italic; font-size: 0.85rem; color: var(--foam-dim); margin-bottom: 0.5rem; }
+
+@media (max-width: 600px) {
+  .controls { padding: 1rem; padding-left: calc(1rem + env(safe-area-inset-left)); padding-right: calc(1rem + env(safe-area-inset-right)); }
+  .filter-btns { flex-wrap: wrap; }
+  .grid { grid-template-columns: 1fr; }
+  header { padding: 2rem 1rem 1.5rem; padding-top: calc(2rem + env(safe-area-inset-top)); }
+  .maps-row { flex-direction: column; }
+  .drawer { width: 100vw; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="harp-bg">𝄞</div>
+  <div class="header-kicker">A Guinness Pilgrim's Passport</div>
+  <h1>50 Pints</h1>
+  <div class="header-tagline">One proper Guinness. Every state.</div>
+  <div class="header-sub">Track every pint pulled, pub by pub, state by state.</div>
+  <div class="progress-wrap">
+    <div class="pint-progress-row">
+      <div class="pint-glass-wrap">
+        <svg width="36" height="52" viewBox="0 0 36 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <clipPath id="glassClip"><path d="M7.5 6.5 L5.5 47.5 Q5.5 49.5 7.5 49.5 L28.5 49.5 Q30.5 49.5 30.5 47.5 L28.5 6.5 Z"/></clipPath>
+          <rect id="glassStout" x="5" y="49" width="26" height="0" fill="#1a2a1a" clip-path="url(#glassClip)"/>
+          <rect id="glassFoam" x="5" y="6" width="26" height="6" fill="#e8ddb0" clip-path="url(#glassClip)" opacity="0"/>
+          <path d="M7 6 L5 48 Q5 50 7 50 L29 50 Q31 50 31 48 L29 6 Z" fill="none" stroke="#3a3020" stroke-width="1.5"/>
+          <line x1="10" y1="10" x2="9" y2="46" stroke="rgba(255,255,255,0.06)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M7 6 L29 6" stroke="#3a3020" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-label" id="barLabel">0% of the New World Discovered</div>
+        <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+      </div>
+      <div class="progress-pints">
+        <span id="visitCount">0</span>
+        <small>pints pulled</small>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="sync-bar" id="syncBar">
+  <div class="sync-dot syncing" id="syncDot"></div>
+  <span id="syncMsg">Connecting…</span>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Find a pub or state…">
+  </div>
+  <div class="filter-btns">
+    <button class="filter-btn active" data-filter="all">All 50</button>
+    <button class="filter-btn" data-filter="visited">Pulled</button>
+    <button class="filter-btn" data-filter="unvisited">Still Thirsty</button>
+  </div>
+</div>
+
+<div class="grid" id="pubGrid"></div>
+<div class="empty-state" id="emptyState">No pubs match — try a different search, friend.</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <button class="drawer-close" id="drawerClose">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="drawer-state" id="dState"></div>
+    <div class="drawer-name" id="dName"></div>
+    <div class="drawer-city" id="dCity"></div>
+    <div id="dBadge"></div>
+  </div>
+  <div class="drawer-body">
+    <div class="section-label">About This Pub</div>
+    <div class="drawer-blurb" id="dBlurb"></div>
+    <div class="guinness-note" id="dGuinnessNote"></div>
+    <div class="section-label">Get Directions</div>
+    <div class="maps-row">
+      <a class="map-btn map-btn-google" id="btnGoogle" href="#" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Google Maps
+      </a>
+      <a class="map-btn map-btn-apple" id="btnApple" href="#" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        Apple Maps
+      </a>
+    </div>
+    <div class="drawer-divider"></div>
+    <div class="pull-row">
+      <div class="pull-label">Mark This Pint as Pulled<span id="dPullDate"></span></div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="dVisitToggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="section-label">Tasting Notes</div>
+    <textarea class="drawer-textarea" id="dComment" placeholder="How was the Guinness? What did you eat? Who raised a glass with you?"></textarea>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-tagline">"A fine pint of stout is worth crossing a state for."</div>
+  Data: <a href="https://www.tastingtable.com/2121434/best-irish-pub-every-state/" target="_blank">Tasting Table</a> &nbsp;·&nbsp; Sláinte! &nbsp;·&nbsp; Synced via Supabase.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── SUPABASE CONFIG ──────────────────────────────
+var SUPABASE_URL = 'https://jzayunzneqpbesrmusmq.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_2V2h7wTxkKaMm4IbNofz3w_fJlmTVMH';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── PUB DATA ─────────────────────────────────────
+var PUBS = [
+  { state:"Alabama", pub:"Callaghan's Irish Social Club", city:"Mobile, AL", address:"916 Charleston St, Mobile, AL 36604", blurb:"Callaghan's Irish Social Club opened way back in 1946, and after a change in ownership in 2002 it became known for award-winning burgers and one of the state's premier music venues. It regularly hosts rising stars — and occasionally legends like Led Zeppelin frontman Robert Plant. Music has always defined the Irish pub experience, and those outstanding burgers and delicious po'boys make for an incredible night out.", guinness:"A longstanding venue that takes its pints as seriously as its live music. The Guinness here is poured with patience — the two-part pour is a religion, not a shortcut." },
+  { state:"Alaska", pub:"O'Brady's Burgers and Brew", city:"Anchorage, AK", address:"1501 Huffman Rd, Anchorage, AK 99515", blurb:"Anchorage has been turning to O'Brady's for a little taste of Ireland for decades. While the menu leans into American dishes, you'll also find shepherd's pie and beers including Guinness and Harp. Both the pot roast and the shepherd's pie have earned a loyal fan base.", guinness:"One of the few spots in Alaska where you can get a proper cold-weather Guinness. The stout and the climate are a natural match — dark, rich, and worth the journey." },
+  { state:"Arizona", pub:"Tim Finnegan's Irish Pub & Restaurant", city:"Glendale, AZ", address:"17045 N 59th Ave, Glendale, AZ 85308", blurb:"Corned beef and cabbage taquitos might not be traditional, but Tim Finnegan's version landed this place on Diners, Drive-ins & Dives. You'll also find shepherd's pie made with lamb. The Guinness is ultra-smooth, and here it's all about customers and community. Don't leave without trying the bread pudding.", guinness:"Reviewers consistently call out the Guinness at Tim Finnegan's as ultra-smooth — high praise in a desert state not known for perfect cellar temperatures. The tap lines are well-maintained and the pour is taken seriously." },
+  { state:"Arkansas", pub:"McGarity's Restaurant & Irish Pub", city:"Eureka Springs, AR", address:"2070 E Van Buren, Eureka Springs, AR 72632", blurb:"Anyone who's a fan of a proper Guinness should check out McGarity's — it takes things very seriously, starting with importing the draft system from Ireland. There's a shepherd's pie some call the best they've ever ordered, along with outstanding bangers and mash and colcannon.", guinness:"McGarity's didn't just import the menu inspiration — they imported the actual draft system from Ireland. The Guinness arrives exactly as it should: settled, cold, and with a proper cream head. This is the real deal." },
+  { state:"California", pub:"The Auld Dubliner", city:"Long Beach, CA", address:"71 South Pine Ave, Long Beach, CA 90802", blurb:"The result of a partnership between natives of Long Beach and Co. Limerick, there's live music almost every night and one of the largest whiskey selections in California, backed by rave reviews for the fish and chips and the boxty. Opt for a whiskey flight alongside the full Irish breakfast.", guinness:"Co. Limerick roots run through this pub, and the Guinness shows it. A lively crowd, clean lines, and a glass that settles while you watch — the Auld Dubliner does not mess around at the tap." },
+  { state:"Colorado", pub:"Nallen's Irish Pub", city:"Denver, CO", address:"1429 Market St, Denver, CO 80202", blurb:"The family behind Nallen's hails from Co. Mayo and takes pride in welcoming people to a slice of Denver-based Ireland for decades. There's an outstanding cross-section of Irish whiskeys on offer, and the bar staff pours a stellar Guinness in an ultra-welcoming space.", guinness:"Co. Mayo roots and decades of muscle memory behind the bar — Nallen's stellar Guinness is one of Denver's most-cited open secrets. At altitude, a well-poured pint is even more appreciated." },
+  { state:"Connecticut", pub:"Vaughan's Public House", city:"Hartford, CT", address:"59 Pratt St, Hartford, CT 06103", blurb:"Founder Johnny Vaughan is a Dublin native who poured his heart into opening his pub — almost everything from the flooring to the bar was imported from the Emerald Isle. The Guinness lamb stew is delightful, the house-made potato chips get shout-outs in every review, and the bar staff is reliably attentive.", guinness:"When your pub's interior was literally shipped over from Dublin, authenticity isn't an afterthought — it's a foundation. The Guinness at Vaughan's arrives with all the quiet gravitas of a Dublin local." },
+  { state:"Delaware", pub:"Catherine Rooney's", city:"Wilmington, DE", address:"1616 Delaware Ave, Wilmington, DE 19806", blurb:"It's all about family at Catherine Rooney's, named for the owning family's matriarchs. No televisions, but delightful music and a setup designed to encourage guests to relax and enjoy the company of others. Mussels, roast beef sandwiches, and burgers all deliver.", guinness:"No televisions pulling focus means the conversation — and the pint — are the whole point. Catherine Rooney's pours a Guinness you can sit with, unhurried." },
+  { state:"Florida", pub:"The Field Irish Pub & Eatery", city:"Fort Lauderdale, FL", address:"3281 Griffin Rd, Fort Lauderdale, FL 33312", blurb:"Florida's climate might be far from Ireland's, but The Field still feels special. A converted cottage nestled under the sprawl of a massive banyan tree, hosting regularly scheduled live music and trivia nights. The shepherd's pie is outstanding and the potato soup is on point.", guinness:"Under a massive banyan tree in Fort Lauderdale, The Field pours a Guinness that feels genuinely out of place — in the best possible way. A dark pint in subtropical shade is a small and perfect thing." },
+  { state:"Georgia", pub:"Olde Blind Dog Irish Pub", city:"Milton, GA", address:"12650 Crabapple Rd, Milton, GA 30004", blurb:"In 2015, Olde Blind Dog took home top honors as International Irish Pub of the Year from the Dublin-based Irish Pubs Global Federation — the first US pub to receive the accolade. It still earns love for the cozy booths, Irish stew, Scotch eggs, fish and chips, and the famous Guinness onion soup.", guinness:"The 2015 International Irish Pub of the Year isn't a title you keep if the Guinness is mediocre. Olde Blind Dog earned that award on the full experience — and the pint is a core part of it." },
+  { state:"Hawaii", pub:"Murphy's Bar & Grill", city:"Honolulu, HI", address:"2 Merchant St, Honolulu, HI 96813", blurb:"Murphy's Bar & Grill has been serving Honolulu since 1987 with an old-school pub vibe. The shepherd's pie exceeds expectations, you'll always be welcomed with open arms, and the bread pudding should not be skipped.", guinness:"A proper pint of Guinness in Honolulu since 1987 — Murphy's might be the most pleasurably incongruous Guinness you'll ever drink. Cold, dark, and perfect against the Pacific backdrop." },
+  { state:"Idaho", pub:"The Harp", city:"Meridian, ID", address:"1435 N Eagle Rd, Meridian, ID 83642", blurb:"An Irish pub serving dishes made from family recipes with soda bread scratch-made fresh daily. It takes pride in the number of beers on tap, and the Guinness lamb stew is outstanding — just save room for the Bailey's mousse for dessert.", guinness:"Family recipes, scratch-made soda bread, and a Guinness lamb stew worth making the trip for. The Harp treats the pint as an ingredient as much as a drink — it shows up in the food and in the glass." },
+  { state:"Illinois", pub:"The Kerryman", city:"Chicago, IL", address:"661 N Clark St, Chicago, IL 60654", blurb:"The Kerryman has been frequented by celebrities like Johnny Depp and noticed by the Irish press. Opened by three men from Kerry in 2005, it's become a home away from home for Irish immigrants in Chicago. The bread pudding might be the highlight of any trip to the Windy City.", guinness:"Opened by three men from Kerry — they didn't cross the Atlantic to serve a mediocre pint. The Kerryman's Guinness has been quietly praised in the Irish press for reasons that become obvious the moment your glass arrives." },
+  { state:"Indiana", pub:"Golden Ace Inn", city:"Indianapolis, IN", address:"2533 E Washington St, Indianapolis, IN 46201", blurb:"Family owned and operated since the end of Prohibition, the Golden Ace Inn is one of the oldest Irish pubs in the US. Photos of the founders still hang in the lovely community gathering place they opened. Live music sessions are always fun — grab a cheeseburger while you're there.", guinness:"Pouring since the end of Prohibition — the Golden Ace Inn has been in the pint business longer than most American bars have existed. There is a certain weight to a Guinness in a place with that kind of history." },
+  { state:"Iowa", pub:"Pat & Fran's", city:"Coralville, IA", address:"808 5th St, Coralville, IA 52241", blurb:"Pat & Fran's has more than two dozen whiskey selections. There are almost as many beers on tap, along with brunches, bingo, and trivia nights. Every Wednesday a portion of proceeds goes to charity. The fish and chips are said to be the best around.", guinness:"More than two dozen whiskeys and an equally serious tap list — Pat & Fran's treats the Guinness as the anchor of a proper drinks program. Wednesday charity nights have a way of making a pint taste even better." },
+  { state:"Kansas", pub:"O'Larney's Pub", city:"Wichita, KS", address:"126 N Mosley, Wichita, KS 67202", blurb:"Rooftop bar with outstanding sandwiches — try the Jurassic pork with capicola, mortadella, peppers, and mozzarella. The Guinness pours are legit, karaoke nights are guaranteed fun, and the rooftop view of downtown Wichita doesn't hurt either.", guinness:"Legit Guinness pours on a rooftop in downtown Wichita — O'Larney's earns its reputation by taking the tap seriously while keeping the atmosphere refreshingly unpretentious." },
+  { state:"Kentucky", pub:"The Irish Rover", city:"Louisville, KY", address:"2319 Frankfort Ave, Louisville, KY 40206", blurb:"Louisville's The Irish Rover has long been under the stewardship of a couple from Co. Clare, and it's the kind of place where customers turn into lifelong friends. The Scotch eggs are regularly called the dish not to miss. Don't leave without a slice of Guinness chocolate cake.", guinness:"Co. Clare ownership, Irish recipes, and a Guinness chocolate cake that makes the stout a dessert ingredient too. The Irish Rover is the whole package — and the pint is the punctuation mark at the end of every visit." },
+  { state:"Louisiana", pub:"Molly's at the Market", city:"New Orleans, LA", address:"1107 Decatur St, New Orleans, LA 70116", blurb:"Molly's at the Market has been a Decatur Street mainstay since 1974, holding parades and staying open during natural disasters when the community needs it most. The frozen Irish coffee is one of the city's best-kept secrets. Yes, you can add an extra shot of Jameson.", guinness:"Open since 1974, Molly's has been pouring through hurricanes, floods, and everything New Orleans throws at it. The Guinness here has the staying power of the city itself." },
+  { state:"Maine", pub:"Paddy Murphy's", city:"Bangor, ME", address:"26 Main St, Bangor, ME 04401", blurb:"Paddy Murphy's donates all food waste and cooking oil to farms and biofuel producers. The beers on tap are a mix of Irish classics and local brews: cottage pie and Galway fish and chips alongside a clam chowder that gets tons of love. Add an order of soda bread.", guinness:"A Guinness and clam chowder in Bangor, Maine is one of those quietly perfect combinations the rest of the world hasn't fully discovered yet. Paddy Murphy's pours the stout properly and pairs it with Maine's best comfort food." },
+  { state:"Maryland", pub:"Galway Bay", city:"Annapolis, MD", address:"63 Maryland Ave, Annapolis, MD 21401", blurb:"Galway Bay has been pulling in awards for everything from its whiskey experience to best Irish pub around. It boasts the state's largest whiskey selection, and Guy Fieri stopped in for the corned beef-stuffed cabbage wraps. Customers rave about the fish and chips, boxty, and crab cakes.", guinness:"Recognized as one of the best Irish pub experiences in the entire United States, Galway Bay's Guinness has been part of that reputation from day one. No televisions — nothing to distract from the pint and the company." },
+  { state:"Massachusetts", pub:"J.J. Foley's Cafe", city:"Boston, MA", address:"117 E Berkeley St, Boston, MA 02118", blurb:"Founded in 1909, J.J. Foley's Cafe is one of the oldest Irish pubs in the US and has been specifically noticed for serving some of the best pints of Guinness in the country. The clam chowder is incredible, and the fries with a side of curry are a must.", guinness:"Founded in 1909 and specifically recognized for serving some of the best pints of Guinness in the entire country. In a city with no shortage of Irish pubs, J.J. Foley's is the one they talk about when the conversation turns serious." },
+  { state:"Michigan", pub:"The Old Shillelagh", city:"Detroit, MI", address:"349 Monroe St, Detroit, MI 48226", blurb:"2025 marked the 50th annual St. Patrick's Day party at Old Shillelagh. It's won people's choice awards for years. Go on a night with live music — the vegan options are a hit, and so are the burgers and Reubens.", guinness:"Fifty consecutive St. Patrick's Day parties is a feat that requires a seriously well-run tap. The Old Shillelagh's Guinness has been the fuel of five decades of Detroit's biggest Irish celebration." },
+  { state:"Minnesota", pub:"O'Donovan's Irish Pub", city:"Minneapolis, MN", address:"700 N 1st Ave, Minneapolis, MN 55403", blurb:"O'Donovan's is a labor of love: every piece was imported from Ireland, from the chairs to the bar and everything in between. Helmed by an Irish native, this pub takes tradition seriously with a whiskey selection that gets tons of love and decor you'll want to linger and study.", guinness:"When the owner is Irish-born and the entire pub was imported from Ireland piece by piece, the Guinness isn't an afterthought — it's the point. O'Donovan's treats the pint as the reason for the room." },
+  { state:"Mississippi", pub:"Ash's Irish Pub", city:"Olive Branch, MS", address:"9200 Goodman Rd, Olive Branch, MS 38654", blurb:"Opened in 2024, Ash's draws inspiration directly from Ireland, focusing on generously portioned comfort food and a strong sense of community. Ultra-fresh fish and chips are enjoyed in a warm atmosphere where everyone feels like a regular from day one.", guinness:"Brand new as of 2024, Ash's hit the ground running with a focus on community and quality — the Guinness on tap is part of that commitment. Mississippi's newest entry in the pint-pilgrim canon." },
+  { state:"Missouri", pub:"John D. McGurk's Irish Pub & Garden", city:"St. Louis, MO", address:"1200 Russell Blvd, St. Louis, MO 63104", blurb:"When John D. McGurk's opened in 1978 with regular live music, it was a novelty. It worked: this hotspot is now a St. Louis institution with live music almost every day. The Guinness stew gets rave reviews for tender beef and a true flavor of the stout.", guinness:"McGurk's Guinness stew is reason enough to visit — the stout isn't just in the glass, it's in the kitchen. The outdoor garden pint in summer is one of Missouri's underrated pleasures." },
+  { state:"Montana", pub:"The Celtic Cowboy", city:"Great Falls, MT", address:"116 1st Ave S, Great Falls, MT 59401", blurb:"The Celtic Cowboy offers a massive whiskey selection, trivia nights, live music, and more than 30 beers on tap. It's caught the attention of the Irish Pubs Global Conference and Awards. Scotch eggs are a customer favorite, as is the Irish mac and cheese with corned beef.", guinness:"Recognized by the Irish Pubs Global Conference, The Celtic Cowboy earns its stripes with 30+ taps and a Guinness that satisfies after a Montana-sized drive. A dark pint in Big Sky Country is its own kind of magic." },
+  { state:"Nebraska", pub:"The Dubliner Pub", city:"Omaha, NE", address:"1205 Harney St, Omaha, NE 68102", blurb:"The Dubliner Pub is tucked away in the basement of Omaha's historic Horbach building. A schedule packed with live music and a ton of beer options including seasonal offerings and Irish imports. A friendly spot with reliably outstanding music and a well-poured Guinness.", guinness:"A basement pub in a 19th century Omaha building — the setting alone makes the Guinness better. The Dubliner's well-poured pint in those surroundings is the kind of thing you describe to people back home." },
+  { state:"Nevada", pub:"McMullan's Irish Pub", city:"Las Vegas, NV", address:"4650 W Tropicana Ave, Las Vegas, NV 89103", blurb:"McMullan's takes things seriously — from the award-winning fish and chips to watching soccer and sports. Live music, holiday celebrations, and a whiskey selection that keeps customers talking. The sticky toffee pudding seals the deal.", guinness:"In a city built on spectacle, McMullan's quiet confidence with the Guinness tap is almost countercultural. Award-winning food and an always-on-point pint — the anti-Vegas Vegas pub." },
+  { state:"New Hampshire", pub:"The Shaskeen Pub & Restaurant", city:"Manchester, NH", address:"909 Elm St, Manchester, NH 03101", blurb:"Even in Ireland, Matt Molloy's pub is legendary. Music fans know him from The Chieftains, and he's one of the founders of the Shaskeen Pub. The current owners kept his vision alive — music on weekends, great Guinness, Smithwick's and Kilkenny on draft.", guinness:"Co-founded by a member of The Chieftains — if there's a pub in America with Irish music and Guinness in its DNA, it's the Shaskeen. The pint here carries real cultural weight." },
+  { state:"New Jersey", pub:"McGovern's Tavern", city:"Newark, NJ", address:"58 New St, Newark, NJ 07102", blurb:"McGovern's Tavern dates back to 1936 and remains a standard-bearer for old-school Irish pub hospitality. You'll never have to ask for a refill before you get one, and the burgers have been a customer favorite for a very long time.", guinness:"Since 1936, McGovern's has understood that a Guinness in the hand before you ask for it is one of the greatest small kindnesses a bartender can offer. Service and the pint are inseparable here." },
+  { state:"New Mexico", pub:"Quarter Celtic Brewpub", city:"Albuquerque, NM", address:"1100 Juan Tabo Blvd NE, Albuquerque, NM 87112", blurb:"Visit Quarter Celtic in Albuquerque and you'll find award-winning craft brews that blend Irish tradition with New Mexico's vibrant craft beer scene. Loyal following for its welcoming atmosphere and quality pours.", guinness:"An award-winning craft brewpub with Irish roots — Quarter Celtic pairs its Guinness respect with New Mexico brewing chops. In the high desert, a proper dark pint is an event." },
+  { state:"New York", pub:"McSorley's Old Ale House", city:"New York, NY", address:"15 E 7th St, New York, NY 10003", blurb:"Founded in 1854, McSorley's Old Ale House is one of the oldest Irish pubs in the United States. It has served Abraham Lincoln, Teddy Roosevelt, and countless generations of New Yorkers. The menu is famously simple — light ale or dark ale — with the legendary house mustard and crackers.", guinness:"McSorley's serves its own house ales — but the dark ale in those ancient mugs, in a room unchanged since the 1850s, captures the same spirit the stout was born from. This is the root of the whole tradition." },
+  { state:"North Carolina", pub:"Ri Ra Irish Pub", city:"Charlotte, NC", address:"208 N Tryon St, Charlotte, NC 28202", blurb:"Ri Ra is the real deal — the pub was actually built in Ireland, dismantled, and shipped piece by piece to Charlotte where it was reassembled. Traditional Irish sessions, Irish whiskeys, and hearty pub fare done right. The fish and chips are a standout.", guinness:"Built in Ireland and shipped to Charlotte plank by plank. The Guinness at Ri Ra arrives in a room that was poured, aged, and cured in the country that invented the drink." },
+  { state:"North Dakota", pub:"EbeneeZer's Eatery & Irish Pub", city:"Minot, ND", address:"15 N Main St, Minot, ND 58703", blurb:"Proprietor Wayne Whitty named his pub after Ebeneezer Frog — a character from Irish folk tale who hid his gold from larcenous Leprechauns. Cozy atmosphere, solid Guinness pours, and pub food that earns repeat visits.", guinness:"A pub named after an Irish folk tale character in the middle of North Dakota — and the Guinness is solid. EbeneeZer's is the kind of place that makes a pint pilgrim feel the world is full of good surprises." },
+  { state:"Ohio", pub:"The Dublin Pub", city:"Dayton, OH", address:"300 Wayne Ave, Dayton, OH 45410", blurb:"The Dublin Pub hosts Ohio's largest St. Patrick's Day party — starting with a Guinness-fueled breakfast before live bands and Irish dancers take the stage. Great service and a lively atmosphere year-round.", guinness:"Ohio's largest St. Patrick's Day party begins with a Guinness breakfast. If you're serious about the pint, you already know: there is no better way to start a morning." },
+  { state:"Oklahoma", pub:"Kilkenny's Irish Pub", city:"Tulsa, OK", address:"1413 E 15th St, Tulsa, OK 74120", blurb:"Kilkenny's owners describe it as not just a restaurant, but a museum — jam-packed with Irish antiques, bric-a-brac, and historic photographs. Beer-battered fish and chips and the Jenkinstown cottage pie keep customers coming back year after year.", guinness:"A museum of Irish artifacts surrounding a proper pint — Kilkenny's Tulsa is one of those rare pubs where you feel the history before the glass even touches your lips." },
+  { state:"Oregon", pub:"Paddy's Bar & Grill", city:"Portland, OR", address:"65 SW Yamhill St, Portland, OR 97204", blurb:"Paddy's Bar & Grill has been serving Portland since 1980, making it one of the oldest Irish pubs on the West Coast. A no-frills neighborhood institution with solid Guinness pours and Irish-American classics done well.", guinness:"Serving Portland since 1980 — one of the West Coast's oldest Irish pubs and one of its most honest. Paddy's Guinness is poured without ceremony and without apology. Solid, dark, and cold." },
+  { state:"Pennsylvania", pub:"Mulleady's Irish Pub", city:"Pittsburgh, PA", address:"1400 Shady Ave, Pittsburgh, PA 15217", blurb:"Mulleady's prides itself on Irish-inspired dishes with local produce. Happy hour features small plates of mac 'n' cheese, truffle fries, and deviled Scotch eggs. A genuine Squirrel Hill neighborhood gem with a warm Irish heart.", guinness:"Local sourcing and a Guinness that holds its own alongside a serious drinks program. Mulleady's is proof that the pint doesn't need to be the whole show to still be the star." },
+  { state:"Rhode Island", pub:"Rí Rá Irish Pub", city:"Providence, RI", address:"50 Exchange Terrace, Providence, RI 02903", blurb:"Like its sister locations, this Rí Rá was built in Ireland and shipped across the Atlantic. Set near the State House in Providence, it draws locals and visitors with proper pints, live Irish music, and a menu anchored by fish and chips and Irish stew.", guinness:"Another pub in the Rí Rá family — built in Ireland, shipped over, reassembled around a proper Guinness tap. The pint here has an unbroken line of authenticity back to the source." },
+  { state:"South Carolina", pub:"Tommy Condon's Irish Pub", city:"Charleston, SC", address:"160 Church St, Charleston, SC 29401", blurb:"Tommy Condon's has been a Charleston institution since 1976 in the city's historic French Quarter. It serves traditional Irish and Lowcountry dishes side by side — she-crab soup alongside fish and chips is as Charleston as it gets.", guinness:"Since 1976 in Charleston's French Quarter — a Guinness here arrives alongside she-crab soup and the faint sound of live Irish music. It's the American South and the Irish tradition making improbably perfect company." },
+  { state:"South Dakota", pub:"McNally's Irish Pub", city:"Sioux Falls, SD", address:"601 W 33rd St, Sioux Falls, SD 57105", blurb:"McNally's has built a loyal following for its honest Irish pub experience — good pints, hearty food, and a friendly atmosphere that feels genuine. Irish stew and bangers and mash are perennial favorites.", guinness:"No tricks, no gimmicks — McNally's in Sioux Falls pours a Guinness because it's the right thing to pour. In a state not overrun with Irish pubs, this one does the honest work." },
+  { state:"Tennessee", pub:"Silky O'Sullivan's", city:"Memphis, TN", address:"183 Beale St, Memphis, TN 38103", blurb:"Silky O'Sullivan's sits right on legendary Beale Street and has been a Memphis institution since the 1970s. The outdoor courtyard with live music, the famous goats in the beer garden, and the frozen grain punches are as much a part of Memphis as the blues.", guinness:"A Guinness on Beale Street, in the courtyard, with live music and possibly a goat wandering past — Silky O'Sullivan's is where Irish stout and Memphis soul have reached a lasting peace." },
+  { state:"Texas", pub:"Fadó Irish Pub", city:"Addison, TX", address:"4545 Belt Line Rd, Addison, TX 75001", blurb:"Fadó (Irish for 'long ago') takes authenticity seriously — the bar was built in Dublin and shipped to Texas. Strong Guinness pours, a full menu of Irish classics, and a packed calendar of live music and sports broadcasts. The beef and Guinness pie is a standout.", guinness:"Built in Dublin and shipped to Texas — Fadó's strong Guinness pours are the whole reason for the journey. The beef and Guinness pie doubles down on the commitment. A Texan-sized love letter to the stout." },
+  { state:"Utah", pub:"Flanagan's on Main", city:"Park City, UT", address:"438 Main St, Park City, UT 84060", blurb:"Flanagan's on Main has been a Park City staple since 1994, bringing warm Irish pub atmosphere to a mountain ski town. The stew, shepherd's pie, and fish and chips all earn high marks, and the cozy interior makes you forget you're in Utah.", guinness:"A Guinness at altitude after a day on the mountain — Flanagan's in Park City has been facilitating this very specific joy since 1994. The cold mountain air and the cold dark pint are a pairing the Celts would have approved of." },
+  { state:"Vermont", pub:"Rí Rá Irish Pub", city:"Burlington, VT", address:"123 Church St, Burlington, VT 05401", blurb:"Burlington's Rí Rá features live Irish music and a serious whiskey selection. After a major fire in 2009, the owners had the interior rebuilt in Ireland and shipped over again — that dedication to authenticity says everything.", guinness:"After a fire burned it down, the owners rebuilt the interior in Ireland and shipped it back across the Atlantic. If you want to know how seriously Rí Rá takes the Guinness experience — that's your answer." },
+  { state:"Virginia", pub:"Celtic House Irish Pub", city:"Arlington, VA", address:"2500 Columbia Pike, Arlington, VA 22204", blurb:"Celtic House debuted a whiskey bar in 2024 that customers laud as a quiet, relaxed retreat. The main pub hosts music, wine nights, Irish dancing, and trivia. Try the salmon salad and the chicken curry — finish with an Irish coffee.", guinness:"A whiskey bar, Irish dancing, and a Guinness that ties it all together — Celtic House in Arlington is proof that the pint doesn't demand exclusivity. It plays well with everything on the program." },
+  { state:"Washington", pub:"Mulleady's Irish Pub", city:"Kenmore, WA", address:"7850 NE Bothell Way, Kenmore, WA 98028", blurb:"Mulleady's offers something extra: co-owner Sarah Zehner is a Level 3 sommelier. Locals become regulars when they discover the lamb-based shepherd's pie, sausage rolls, and outstanding burgers. The friendly neighborhood pub feel makes it a natural gathering place.", guinness:"A Level 3 sommelier runs the drinks program here — which only makes the Guinness more interesting. When someone that serious about flavor chooses to feature the stout, the pint is in good hands." },
+  { state:"West Virginia", pub:"Paddy's", city:"Charles Town, WV", address:"208 W Washington St, Charles Town, WV 25414", blurb:"Paddy's is set in the oldest building in Charles Town, initially erected in 1787. Customers return for friendly staff and delicious French onion soup. The historic surroundings give every pint a certain extra gravitas.", guinness:"Drinking a Guinness in a building from 1787 — before the United States was a decade old — adds a depth to the pint that no amount of brewing can replicate. Paddy's earns its gravity from the building alone." },
+  { state:"Wisconsin", pub:"County Clare Irish Inn & Pub", city:"Milwaukee, WI", address:"1234 N Astor St, Milwaukee, WI 53202", blurb:"County Clare is more than a pub — it's a full Irish inn that has anchored Milwaukee's Irish scene for decades. Regular quiz nights and live music. Beer is a big deal here, with an extensive list including unusual seasonal specials. The Irish breakfast is not to be missed.", guinness:"An inn built around the Irish pub tradition, in a city that knows its beer — County Clare's Guinness is poured with the weight of an establishment that has nothing left to prove." },
+  { state:"Wyoming", pub:"Riley's Irish Pub", city:"Cheyenne, WY", address:"1617 Capitol Ave, Cheyenne, WY 82001", blurb:"Riley's Irish Pub brings a genuine bit of the Emerald Isle to Wyoming's capital city. A cozy, unpretentious spot that takes its Guinness pours seriously and backs them up with solid pub grub. Regular live music and warm staff make it feel like home.", guinness:"Cheyenne, Wyoming is the last place most people expect to find a serious Guinness. Riley's is the pleasant surprise at the end of the road — that's what makes the pilgrimage worth it." }
+];
+
+// ── LOCAL CACHE (instant render + offline fallback) ───
+var localCache = {};
+try { var _lc = localStorage.getItem('pintPilgrim_cache'); if (_lc) localCache = JSON.parse(_lc); } catch(e) {}
+function saveCache() { try { localStorage.setItem('pintPilgrim_cache', JSON.stringify(localCache)); } catch(e) {} }
+function getEntry(key) { return localCache[key] || { visited: false, date: null, comment: '' }; }
+
+// ── SYNC STATUS ───────────────────────────────────────
+function setSyncStatus(state, msg) {
+  var dot = document.getElementById('syncDot');
+  var msgEl = document.getElementById('syncMsg');
+  if (!dot || !msgEl) return;
+  dot.className = 'sync-dot' + (state ? ' ' + state : '');
+  msgEl.textContent = msg;
+}
+
+// ── LOAD FROM SUPABASE ────────────────────────────────
+async function loadFromSupabase() {
+  setSyncStatus('syncing', 'Loading your pints…');
+  try {
+    var result = await sb.from('pint_visits').select('*');
+    if (result.error) throw result.error;
+    var rows = result.data || [];
+    rows.forEach(function(row) {
+      localCache[row.pub_key] = { visited: row.visited || false, date: row.visit_date || null, comment: row.comment || '' };
+    });
+    saveCache();
+    var pulled = rows.filter(function(r) { return r.visited; }).length;
+    setSyncStatus('synced', pulled > 0 ? pulled + ' pint' + (pulled === 1 ? '' : 's') + ' pulled · synced' : 'Connected · no pints pulled yet');
+    refreshAllCards();
+    updateProgress();
+  } catch(err) {
+    setSyncStatus('error', 'Offline — showing local data');
+    console.error('Supabase load error:', err);
+  }
+}
+
+// ── SAVE TO SUPABASE ──────────────────────────────────
+var saveTimers = {};
+async function saveToSupabase(key, entry) {
+  setSyncStatus('syncing', 'Saving…');
+  try {
+    var result = await sb.from('pint_visits').upsert(
+      { pub_key: key, visited: entry.visited, visit_date: entry.date, comment: entry.comment },
+      { onConflict: 'pub_key' }
+    );
+    if (result.error) throw result.error;
+    setSyncStatus('synced', 'Saved ✓');
+  } catch(err) {
+    setSyncStatus('error', 'Save failed — kept locally');
+    console.error('Supabase save error:', err);
+  }
+}
+function debouncedSave(key, entry) {
+  clearTimeout(saveTimers[key]);
+  saveTimers[key] = setTimeout(function() { saveToSupabase(key, entry); }, 800);
+}
+
+// ── BUILD CARDS ───────────────────────────────────────
+var grid = document.getElementById('pubGrid');
+PUBS.forEach(function(pub, idx) {
+  var key = 'pub_' + idx;
+  var entry = getEntry(key);
+  var card = document.createElement('div');
+  card.className = 'pub-card' + (entry.visited ? ' pulled' : '');
+  card.dataset.key = key;
+  card.dataset.idx = String(idx);
+  card.dataset.state = pub.state.toLowerCase();
+  card.dataset.pub = pub.pub.toLowerCase();
+  card.innerHTML =
+    '<div class="card-top">' +
+      '<div class="pint-check ' + (entry.visited ? 'pulled' : '') + '" data-key="' + key + '">🍺</div>' +
+      '<div class="card-info">' +
+        '<div class="state-label">' + pub.state + '</div>' +
+        '<div class="pub-name">' + pub.pub + '</div>' +
+        '<div class="pub-city">' + pub.city + '</div>' +
+        (entry.visited && entry.date ? '<div class="pulled-date">Pint pulled ' + entry.date + '</div>' : '<div class="pulled-date" style="display:none"></div>') +
+      '</div>' +
+      '<svg class="glass-icon" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<clipPath id="gc' + idx + '"><path d="M5 3 L3.5 37 Q3.5 38.5 5 38.5 L23 38.5 Q24.5 38.5 24.5 37 L23 3 Z"/></clipPath>' +
+        '<rect x="3.5" y="' + (entry.visited ? '14' : '38') + '" width="21" height="' + (entry.visited ? '24' : '0') + '" fill="#1e3a22" clip-path="url(#gc' + idx + ')" id="gs' + idx + '"/>' +
+        '<rect x="3.5" y="3" width="21" height="7" fill="#e8ddb0" clip-path="url(#gc' + idx + ')" opacity="' + (entry.visited ? '0.85' : '0.06') + '" id="gf' + idx + '"/>' +
+        '<path d="M5 3 L23 3" stroke="#2e2010" stroke-width="1.2" stroke-linecap="round"/>' +
+        '<path d="M5 3 L3.5 37 Q3.5 38.5 5 38.5 L23 38.5 Q24.5 38.5 24.5 37 L23 3 Z" fill="none" stroke="#2a2010" stroke-width="1.2"/>' +
+        '<line x1="8" y1="7" x2="7" y2="36" stroke="rgba(255,255,255,0.04)" stroke-width="1.5" stroke-linecap="round"/>' +
+      '</svg>' +
+    '</div>' +
+    '<div class="card-blurb">' + pub.blurb.substring(0, 130) + '…</div>' +
+    (entry.comment ? '<div class="card-comment-preview">&ldquo;' + entry.comment + '&rdquo;</div>' : '') +
+    '<div class="card-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>Tap to read more &amp; get directions</div>';
+  grid.appendChild(card);
+});
+
+// ── DRAWER ────────────────────────────────────────────
+var activeKey = null;
+var noteTimer = null;
+var overlay = document.getElementById('overlay');
+var drawer = document.getElementById('drawer');
+
+function openDrawer(idx) {
+  var pub = PUBS[idx];
+  var key = 'pub_' + idx;
+  var entry = getEntry(key);
+  activeKey = key;
+  document.getElementById('dState').textContent = pub.state;
+  document.getElementById('dName').textContent = pub.pub;
+  document.getElementById('dCity').textContent = pub.city;
+  document.getElementById('dBlurb').textContent = pub.blurb;
+  document.getElementById('dGuinnessNote').innerHTML = '<strong>On the Pint:</strong> ' + pub.guinness;
+  document.getElementById('dBadge').innerHTML = entry.visited ? '<div class="pulled-badge">🍺 Pint Pulled' + (entry.date ? ' &middot; ' + entry.date : '') + '</div>' : '';
+  document.getElementById('dVisitToggle').checked = entry.visited;
+  document.getElementById('dPullDate').textContent = entry.visited && entry.date ? 'Pulled: ' + entry.date : 'Not yet pulled';
+  document.getElementById('dComment').value = entry.comment || '';
+  var q = encodeURIComponent(pub.address);
+  document.getElementById('btnGoogle').href = 'https://www.google.com/maps/search/?api=1&query=' + q;
+  document.getElementById('btnApple').href = 'https://maps.apple.com/?q=' + q;
+  overlay.classList.add('open');
+  drawer.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.body.classList.add('drawer-open');
+}
+
+function closeDrawer() {
+  overlay.classList.remove('open');
+  drawer.classList.remove('open');
+  document.body.style.overflow = '';
+  document.body.classList.remove('drawer-open');
+  activeKey = null;
+}
+
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDrawer(); });
+
+document.getElementById('dVisitToggle').addEventListener('change', function() {
+  if (!activeKey) return;
+  var entry = getEntry(activeKey);
+  entry.visited = this.checked;
+  entry.date = this.checked ? new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : null;
+  localCache[activeKey] = entry;
+  saveCache();
+  debouncedSave(activeKey, entry);
+  document.getElementById('dPullDate').textContent = entry.visited && entry.date ? 'Pulled: ' + entry.date : 'Not yet pulled';
+  document.getElementById('dBadge').innerHTML = entry.visited ? '<div class="pulled-badge">🍺 Pint Pulled' + (entry.date ? ' &middot; ' + entry.date : '') + '</div>' : '';
+  refreshCard(activeKey, entry);
+  updateProgress();
+});
+
+document.getElementById('dComment').addEventListener('input', function() {
+  if (!activeKey) return;
+  var val = this.value;
+  var key = activeKey;
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(function() {
+    var entry = getEntry(key);
+    entry.comment = val;
+    localCache[key] = entry;
+    saveCache();
+    debouncedSave(key, entry);
+    refreshCard(key, entry);
+  }, 600);
+});
+
+// ── CARD CLICKS ───────────────────────────────────────
+grid.addEventListener('click', function(e) {
+  var check = e.target.closest('.pint-check');
+  if (check) {
+    e.stopPropagation();
+    var key = check.dataset.key;
+    var entry = getEntry(key);
+    entry.visited = !entry.visited;
+    entry.date = entry.visited ? new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : null;
+    localCache[key] = entry;
+    saveCache();
+    debouncedSave(key, entry);
+    refreshCard(key, entry);
+    updateProgress();
+    return;
+  }
+  var card = e.target.closest('.pub-card');
+  if (card) openDrawer(parseInt(card.dataset.idx, 10));
+});
+
+// ── REFRESH CARD ──────────────────────────────────────
+function refreshCard(key, entry) {
+  var card = grid.querySelector('.pub-card[data-key="' + key + '"]');
+  if (!card) return;
+  var idx = parseInt(card.dataset.idx, 10);
+  var check = card.querySelector('.pint-check');
+  var dateEl = card.querySelector('.pulled-date');
+  var stout = document.getElementById('gs' + idx);
+  var foam = document.getElementById('gf' + idx);
+  if (entry.visited) {
+    card.classList.add('pulled'); if (check) check.classList.add('pulled');
+    if (dateEl) { dateEl.textContent = 'Pint pulled ' + entry.date; dateEl.style.display = ''; }
+    if (stout) { stout.setAttribute('y','14'); stout.setAttribute('height','24'); }
+    if (foam) foam.setAttribute('opacity','0.85');
+  } else {
+    card.classList.remove('pulled'); if (check) check.classList.remove('pulled');
+    if (dateEl) { dateEl.textContent = ''; dateEl.style.display = 'none'; }
+    if (stout) { stout.setAttribute('y','38'); stout.setAttribute('height','0'); }
+    if (foam) foam.setAttribute('opacity','0.06');
+  }
+  var preview = card.querySelector('.card-comment-preview');
+  if (entry.comment) {
+    if (!preview) { preview = document.createElement('div'); preview.className = 'card-comment-preview'; card.querySelector('.card-hint').before(preview); }
+    preview.innerHTML = '&ldquo;' + entry.comment + '&rdquo;';
+  } else if (preview) { preview.remove(); }
+}
+
+function refreshAllCards() {
+  PUBS.forEach(function(pub, idx) { refreshCard('pub_' + idx, getEntry('pub_' + idx)); });
+}
+
+// ── PROGRESS ─────────────────────────────────────────
+function updateProgress() {
+  var count = 0;
+  Object.keys(localCache).forEach(function(k) { if (localCache[k].visited) count++; });
+  var pct = Math.round(count / 50 * 100);
+  var vcEl = document.getElementById('visitCount'); if (vcEl) vcEl.textContent = count;
+  var bfEl = document.getElementById('barFill');
+  if (bfEl) { bfEl.style.width = pct + '%'; if (count > 0) bfEl.classList.add('has-pints'); else bfEl.classList.remove('has-pints'); }
+  var blEl = document.getElementById('barLabel'); if (blEl) blEl.textContent = pct + '% of the New World Discovered';
+  var gsEl = document.getElementById('glassStout'); if (gsEl) { var fh = Math.round(count/50*40); gsEl.setAttribute('y', String(49-fh)); gsEl.setAttribute('height', String(fh)); }
+  var gfEl = document.getElementById('glassFoam'); if (gfEl) gfEl.setAttribute('opacity', count > 0 ? '0.85' : '0');
+}
+updateProgress();
+
+// ── FILTERS ───────────────────────────────────────────
+var currentFilter = 'all';
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    this.classList.add('active');
+    currentFilter = this.dataset.filter;
+    applyFilters();
+  });
+});
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+function applyFilters() {
+  var q = document.getElementById('searchInput').value.trim().toLowerCase();
+  var visible = 0;
+  grid.querySelectorAll('.pub-card').forEach(function(card) {
+    var entry = getEntry(card.dataset.key);
+    var ms = !q || card.dataset.state.includes(q) || card.dataset.pub.includes(q);
+    var mf = currentFilter==='all' ? true : currentFilter==='visited' ? entry.visited : !entry.visited;
+    if (ms && mf) { card.classList.remove('hidden'); visible++; } else { card.classList.add('hidden'); }
+  });
+  var es = document.getElementById('emptyState'); if (es) es.style.display = visible===0 ? 'block' : 'none';
+}
+
+// ── INIT ──────────────────────────────────────────────
+loadFromSupabase();
+</script>
+</body>
+</html>
