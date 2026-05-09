@@ -719,13 +719,7 @@ function applyFilters() {
 loadFromSupabase();
 
 // ── PINT JOURNAL EXPORT ───────────────────────────────
-var exportBtn = document.getElementById('exportJournalBtn');
-var printJournal = document.getElementById('printJournal');
-var pjContent = document.getElementById('pjContent');
-var pjBackBtn = document.getElementById('pjBackBtn');
-var pjPrintBtn = document.getElementById('pjPrintBtn');
-
-function buildJournal() {
+function buildJournalHTML() {
   var pulled = [];
   var remaining = [];
   PUBS.forEach(function(pub, idx) {
@@ -741,29 +735,39 @@ function buildJournal() {
   var pct = Math.round(pulled.length / 50 * 100);
 
   var html = '';
+  html += '<div style="font-family:Georgia,serif;background:#fff;color:#1a1a1a;max-width:680px;margin:0 auto;padding:2rem 2.5rem;">';
 
-  // Cover
-  html += '<div class="pj-cover">';
-  html += '<div class="pj-shamrock">&#9752;</div>';
-  html += '<div class="pj-title">50 Pints</div>';
-  html += '<div class="pj-subtitle">A Guinness Pilgrim&rsquo;s Journal</div>';
-  html += '<div class="pj-stats"><div class="pj-stats-num">' + pulled.length + ' of 50</div><div class="pj-stats-label">Pints Pulled &nbsp;&middot;&nbsp; ' + pct + '% of the New World Discovered</div></div>';
-  html += '<div class="pj-generated">Generated ' + today + '</div>';
+  // Back + Print bar
+  html += '<div id="pjToolbar" style="position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:0.8rem 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">';
+  html += '<button onclick="closeJournal()" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:6px;font-family:Lato,sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.55rem 1.1rem;cursor:pointer;">&#8592; Back</button>';
+  html += '<button onclick="window.print()" style="background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-family:Lato,sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.55rem 1.1rem;cursor:pointer;">Save as PDF</button>';
   html += '</div>';
 
-  // Pulled pints
+  // Cover
+  html += '<div style="text-align:center;padding-bottom:2.5rem;margin-bottom:2.5rem;border-bottom:3px solid #1a1a1a;">';
+  html += '<div style="font-size:3rem;line-height:1;margin-bottom:0.5rem;">&#9752;</div>';
+  html += '<div style="font-family:Georgia,serif;font-size:3rem;font-weight:900;color:#1a1a1a;line-height:1;margin-bottom:0.3rem;">50 Pints</div>';
+  html += '<div style="font-size:0.8rem;letter-spacing:0.2em;text-transform:uppercase;color:#888;margin-bottom:1.5rem;">A Guinness Pilgrim's Journal</div>';
+  html += '<div style="display:inline-block;border:2px solid #1a1a1a;border-radius:8px;padding:0.6rem 1.4rem;margin-bottom:0.8rem;">';
+  html += '<div style="font-family:Georgia,serif;font-size:2rem;font-weight:700;color:#1a1a1a;line-height:1;">' + pulled.length + ' of 50</div>';
+  html += '<div style="font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:#888;">Pints Pulled &nbsp;&middot;&nbsp; ' + pct + '% of the New World Discovered</div>';
+  html += '</div>';
+  html += '<div style="font-size:0.72rem;color:#bbb;letter-spacing:0.08em;">Generated ' + today + '</div>';
+  html += '</div>';
+
+  // Pulled entries
   if (pulled.length === 0) {
-    html += '<div class="pj-section-head">Pints Pulled</div>';
-    html += '<p style="color:#999;font-style:italic;font-size:0.85rem;padding:1rem 0;">No pints pulled yet — get out there, Sal.</p>';
+    html += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:2rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Pints Pulled</div>';
+    html += '<p style="color:#999;font-style:italic;font-size:0.85rem;padding:1rem 0;">No pints pulled yet &mdash; get out there, Sal.</p>';
   } else {
-    html += '<div class="pj-section-head">Pints Pulled &mdash; ' + pulled.length + ' pub' + (pulled.length === 1 ? '' : 's') + '</div>';
+    html += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:0 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Pints Pulled &mdash; ' + pulled.length + ' pub' + (pulled.length === 1 ? '' : 's') + '</div>';
     pulled.forEach(function(item) {
-      html += '<div class="pj-entry">';
-      html += '<div class="pj-entry-state">' + item.pub.state + '</div>';
-      html += '<div class="pj-entry-name">' + item.pub.pub + '</div>';
-      html += '<div class="pj-entry-meta"><span class="pj-city">' + item.pub.city + '</span><span class="pj-date">' + (item.entry.date ? 'Pulled ' + item.entry.date : '') + '</span></div>';
+      html += '<div style="padding:1.1rem 0;border-bottom:1px solid #eee;page-break-inside:avoid;">';
+      html += '<div style="font-size:0.6rem;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin-bottom:0.2rem;">' + item.pub.state + '</div>';
+      html += '<div style="font-family:Georgia,serif;font-size:1.15rem;font-weight:700;color:#1a1a1a;margin-bottom:0.15rem;">' + item.pub.pub + '</div>';
+      html += '<div style="font-size:0.78rem;color:#888;margin-bottom:' + (item.entry.comment ? '0.5rem' : '0') + ';">' + item.pub.city + (item.entry.date ? ' &nbsp;&middot;&nbsp; <em>Pulled ' + item.entry.date + '</em>' : '') + '</div>';
       if (item.entry.comment) {
-        html += '<div class="pj-entry-notes">' + item.entry.comment + '</div>';
+        html += '<div style="font-size:0.82rem;color:#333;line-height:1.65;font-style:italic;padding-left:0.8rem;border-left:3px solid #c8a84b;margin-top:0.4rem;">' + item.entry.comment + '</div>';
       }
       html += '</div>';
     });
@@ -771,89 +775,57 @@ function buildJournal() {
 
   // Still thirsty
   if (remaining.length > 0) {
-    html += '<div class="pj-section-head" style="margin-top:2.5rem;">Still Thirsty &mdash; ' + remaining.length + ' state' + (remaining.length === 1 ? '' : 's') + ' remaining</div>';
-    html += '<div class="pj-remaining">';
+    html += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Still Thirsty &mdash; ' + remaining.length + ' state' + (remaining.length === 1 ? '' : 's') + ' remaining</div>';
+    html += '<div style="column-count:2;column-gap:2rem;">';
     remaining.forEach(function(pub) {
-      html += '<div class="pj-remaining-item">' + pub.state + ' &mdash; ' + pub.pub + '</div>';
+      html += '<div style="font-size:0.8rem;color:#555;padding:0.25rem 0;break-inside:avoid;">&#9675; &nbsp;' + pub.state + ' &mdash; ' + pub.pub + '</div>';
     });
     html += '</div>';
   }
 
-  // Footer
-  html += '<div class="pj-footer">&copy; 2026 Michael Pusateri &nbsp;&middot;&nbsp; 50 Pints v1.0 &nbsp;&middot;&nbsp; Sl&aacute;inte!</div>';
+  // Journal footer
+  html += '<div style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid #ddd;text-align:center;font-size:0.68rem;color:#bbb;letter-spacing:0.08em;">';
+  html += '&copy; 2026 Michael Pusateri &nbsp;&middot;&nbsp; 50 Pints v1.0 &nbsp;&middot;&nbsp; Sl&aacute;inte!';
+  html += '</div>';
 
+  html += '</div>'; // end wrapper
   return html;
 }
 
+function closeJournal() {
+  var j = document.getElementById('liveJournal');
+  if (j) j.parentNode.removeChild(j);
+  var els = ['pubGrid','syncBar','searchInput','pubGrid'];
+  document.querySelector('header').style.display = '';
+  document.querySelector('.sync-bar').style.display = '';
+  document.querySelector('.controls').style.display = '';
+  document.getElementById('pubGrid').style.display = '';
+  document.querySelector('footer').style.display = '';
+  document.body.style.background = '';
+  document.body.style.overflow = '';
+}
+
+var exportBtn = document.getElementById('exportJournalBtn');
 if (exportBtn) {
   exportBtn.addEventListener('click', function() {
-    pjContent.innerHTML = buildJournal();
-    printJournal.style.display = 'block';
-    document.getElementById('pubGrid').style.display = 'none';
+    // Hide app
     document.querySelector('header').style.display = 'none';
     document.querySelector('.sync-bar').style.display = 'none';
     document.querySelector('.controls').style.display = 'none';
+    document.getElementById('pubGrid').style.display = 'none';
     document.querySelector('footer').style.display = 'none';
+    document.body.style.background = '#fff';
+    // Build and inject journal
+    var journal = document.createElement('div');
+    journal.id = 'liveJournal';
+    journal.innerHTML = buildJournalHTML();
+    document.body.appendChild(journal);
     window.scrollTo(0, 0);
   });
 }
 
-if (pjBackBtn) {
-  pjBackBtn.addEventListener('click', function() {
-    printJournal.style.display = 'none';
-    document.getElementById('pubGrid').style.display = '';
-    document.querySelector('header').style.display = '';
-    document.querySelector('.sync-bar').style.display = '';
-    document.querySelector('.controls').style.display = '';
-    document.querySelector('footer').style.display = '';
-  });
-}
+// ── INIT ──────────────────────────────────────────────
+loadFromSupabase();
 
-if (pjPrintBtn) {
-  pjPrintBtn.addEventListener('click', function() {
-    window.print();
-  });
-}
-
-
-// ── DEDICATION MODAL ──────────────────────────────────
-var modalOverlay = document.getElementById('modalOverlay');
-var dedicationBtn = document.getElementById('dedicationBtn');
-var modalCloseBtn = document.getElementById('modalCloseBtn');
-if (dedicationBtn) {
-  dedicationBtn.addEventListener('click', function() {
-    modalOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  });
-}
-if (modalCloseBtn) {
-  modalCloseBtn.addEventListener('click', function() {
-    modalOverlay.classList.remove('open');
-    document.body.style.overflow = '';
-  });
-}
-if (modalOverlay) {
-  modalOverlay.addEventListener('click', function(e) {
-    if (e.target === modalOverlay) {
-      modalOverlay.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-  });
-}
-
-</script>
-
-<!-- PRINT JOURNAL -->
-<div class="print-journal" id="printJournal" style="display:none;">
-  <div class="pj-print-bar">
-    <span class="pj-print-bar-title">Pint Journal Preview</span>
-    <div class="pj-btn">
-      <button class="pj-back-btn" id="pjBackBtn">&#8592; Back</button>
-      <button class="pj-print-btn" id="pjPrintBtn">Save as PDF</button>
-    </div>
-  </div>
-  <div id="pjContent"></div>
-</div>
-
-</body>
-</html>
+// ── PINT JOURNAL EXPORT ───────────────────────────────
+var exportBtn = document.getElementById('exportJournalBtn');
