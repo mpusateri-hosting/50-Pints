@@ -724,108 +724,88 @@ function buildJournalHTML() {
   var remaining = [];
   PUBS.forEach(function(pub, idx) {
     var entry = getEntry('pub_' + idx);
-    if (entry.visited) {
-      pulled.push({ pub: pub, entry: entry });
-    } else {
-      remaining.push(pub);
-    }
+    if (entry.visited) { pulled.push({ pub: pub, entry: entry }); }
+    else { remaining.push(pub); }
   });
-
   var today = new Date().toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
   var pct = Math.round(pulled.length / 50 * 100);
-
-  var html = '';
-  html += '<div style="font-family:Georgia,serif;background:#fff;color:#1a1a1a;max-width:680px;margin:0 auto;padding:2rem 2.5rem;">';
-
-  // Back + Print bar
-  html += '<div id="pjToolbar" style="position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:0.8rem 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">';
-  html += '<button onclick="closeJournal()" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:6px;font-family:Lato,sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.55rem 1.1rem;cursor:pointer;">&#8592; Back</button>';
-  html += '<button onclick="window.print()" style="background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-family:Lato,sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.55rem 1.1rem;cursor:pointer;">Save as PDF</button>';
-  html += '</div>';
-
-  // Cover
-  html += '<div style="text-align:center;padding-bottom:2.5rem;margin-bottom:2.5rem;border-bottom:3px solid #1a1a1a;">';
-  html += '<div style="font-size:3rem;line-height:1;margin-bottom:0.5rem;">&#9752;</div>';
-  html += '<div style="font-family:Georgia,serif;font-size:3rem;font-weight:900;color:#1a1a1a;line-height:1;margin-bottom:0.3rem;">50 Pints</div>';
-  html += '<div style="font-size:0.8rem;letter-spacing:0.2em;text-transform:uppercase;color:#888;margin-bottom:1.5rem;">A Guinness Pilgrim's Journal</div>';
-  html += '<div style="display:inline-block;border:2px solid #1a1a1a;border-radius:8px;padding:0.6rem 1.4rem;margin-bottom:0.8rem;">';
-  html += '<div style="font-family:Georgia,serif;font-size:2rem;font-weight:700;color:#1a1a1a;line-height:1;">' + pulled.length + ' of 50</div>';
-  html += '<div style="font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:#888;">Pints Pulled &nbsp;&middot;&nbsp; ' + pct + '% of the New World Discovered</div>';
-  html += '</div>';
-  html += '<div style="font-size:0.72rem;color:#bbb;letter-spacing:0.08em;">Generated ' + today + '</div>';
-  html += '</div>';
-
-  // Pulled entries
+  var h = '';
+  h += '<div style="font-family:Georgia,serif;background:#fff;color:#1a1a1a;max-width:680px;margin:0 auto;padding:2rem 2.5rem;">';
+  h += '<div style="position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:0.8rem 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">';
+  h += '<button onclick="closeJournal()" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:6px;font-size:0.78rem;font-weight:700;padding:0.55rem 1.1rem;cursor:pointer;">&#8592; Back</button>';
+  h += '<button onclick="window.print()" style="background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:0.78rem;font-weight:700;padding:0.55rem 1.1rem;cursor:pointer;">Save as PDF</button>';
+  h += '</div>';
+  h += '<div style="text-align:center;padding-bottom:2.5rem;margin-bottom:2.5rem;border-bottom:3px solid #1a1a1a;">';
+  h += '<div style="font-size:3rem;line-height:1;margin-bottom:0.5rem;">&#9752;</div>';
+  h += '<div style="font-family:Georgia,serif;font-size:3rem;font-weight:900;color:#1a1a1a;line-height:1;margin-bottom:0.3rem;">50 Pints</div>';
+  h += '<div style="font-size:0.8rem;letter-spacing:0.2em;text-transform:uppercase;color:#888;margin-bottom:1.5rem;">A Guinness Pilgrim's Journal</div>';
+  h += '<div style="display:inline-block;border:2px solid #1a1a1a;border-radius:8px;padding:0.6rem 1.4rem;margin-bottom:0.8rem;">';
+  h += '<div style="font-family:Georgia,serif;font-size:2rem;font-weight:700;color:#1a1a1a;line-height:1;">' + pulled.length + ' of 50</div>';
+  h += '<div style="font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:#888;">Pints Pulled &nbsp;&middot;&nbsp; ' + pct + '% of the New World Discovered</div>';
+  h += '</div>';
+  h += '<div style="font-size:0.72rem;color:#bbb;letter-spacing:0.08em;">Generated ' + today + '</div>';
+  h += '</div>';
   if (pulled.length === 0) {
-    html += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:2rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Pints Pulled</div>';
-    html += '<p style="color:#999;font-style:italic;font-size:0.85rem;padding:1rem 0;">No pints pulled yet &mdash; get out there, Sal.</p>';
+    h += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:2rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Pints Pulled</div>';
+    h += '<p style="color:#999;font-style:italic;font-size:0.85rem;padding:1rem 0;">No pints pulled yet &mdash; get out there, Sal.</p>';
   } else {
-    html += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:0 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Pints Pulled &mdash; ' + pulled.length + ' pub' + (pulled.length === 1 ? '' : 's') + '</div>';
+    h += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:0 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Pints Pulled &mdash; ' + pulled.length + ' pub' + (pulled.length === 1 ? '' : 's') + '</div>';
     pulled.forEach(function(item) {
-      html += '<div style="padding:1.1rem 0;border-bottom:1px solid #eee;page-break-inside:avoid;">';
-      html += '<div style="font-size:0.6rem;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin-bottom:0.2rem;">' + item.pub.state + '</div>';
-      html += '<div style="font-family:Georgia,serif;font-size:1.15rem;font-weight:700;color:#1a1a1a;margin-bottom:0.15rem;">' + item.pub.pub + '</div>';
-      html += '<div style="font-size:0.78rem;color:#888;margin-bottom:' + (item.entry.comment ? '0.5rem' : '0') + ';">' + item.pub.city + (item.entry.date ? ' &nbsp;&middot;&nbsp; <em>Pulled ' + item.entry.date + '</em>' : '') + '</div>';
+      h += '<div style="padding:1.1rem 0;border-bottom:1px solid #eee;page-break-inside:avoid;">';
+      h += '<div style="font-size:0.6rem;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin-bottom:0.2rem;">' + item.pub.state + '</div>';
+      h += '<div style="font-family:Georgia,serif;font-size:1.15rem;font-weight:700;color:#1a1a1a;margin-bottom:0.15rem;">' + item.pub.pub + '</div>';
+      h += '<div style="font-size:0.78rem;color:#888;margin-bottom:' + (item.entry.comment ? '0.5rem' : '0') + ';">' + item.pub.city + (item.entry.date ? ' &nbsp;&middot;&nbsp; <em>Pulled ' + item.entry.date + '</em>' : '') + '</div>';
       if (item.entry.comment) {
-        html += '<div style="font-size:0.82rem;color:#333;line-height:1.65;font-style:italic;padding-left:0.8rem;border-left:3px solid #c8a84b;margin-top:0.4rem;">' + item.entry.comment + '</div>';
+        h += '<div style="font-size:0.82rem;color:#333;line-height:1.65;font-style:italic;padding-left:0.8rem;border-left:3px solid #c8a84b;margin-top:0.4rem;">' + item.entry.comment + '</div>';
       }
-      html += '</div>';
+      h += '</div>';
     });
   }
-
-  // Still thirsty
   if (remaining.length > 0) {
-    html += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Still Thirsty &mdash; ' + remaining.length + ' state' + (remaining.length === 1 ? '' : 's') + ' remaining</div>';
-    html += '<div style="column-count:2;column-gap:2rem;">';
+    h += '<div style="font-size:0.65rem;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#bbb;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid #ddd;">Still Thirsty &mdash; ' + remaining.length + ' state' + (remaining.length === 1 ? '' : 's') + ' remaining</div>';
+    h += '<div style="column-count:2;column-gap:2rem;">';
     remaining.forEach(function(pub) {
-      html += '<div style="font-size:0.8rem;color:#555;padding:0.25rem 0;break-inside:avoid;">&#9675; &nbsp;' + pub.state + ' &mdash; ' + pub.pub + '</div>';
+      h += '<div style="font-size:0.8rem;color:#555;padding:0.25rem 0;break-inside:avoid;">&#9675; &nbsp;' + pub.state + ' &mdash; ' + pub.pub + '</div>';
     });
-    html += '</div>';
+    h += '</div>';
   }
-
-  // Journal footer
-  html += '<div style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid #ddd;text-align:center;font-size:0.68rem;color:#bbb;letter-spacing:0.08em;">';
-  html += '&copy; 2026 Michael Pusateri &nbsp;&middot;&nbsp; 50 Pints v1.0 &nbsp;&middot;&nbsp; Sl&aacute;inte!';
-  html += '</div>';
-
-  html += '</div>'; // end wrapper
-  return html;
+  h += '<div style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid #ddd;text-align:center;font-size:0.68rem;color:#bbb;letter-spacing:0.08em;">&copy; 2026 Michael Pusateri &nbsp;&middot;&nbsp; 50 Pints v1.0 &nbsp;&middot;&nbsp; Sl&aacute;inte!</div>';
+  h += '</div>';
+  return h;
 }
 
-function closeJournal() {
+window.closeJournal = function() {
   var j = document.getElementById('liveJournal');
-  if (j) j.parentNode.removeChild(j);
-  var els = ['pubGrid','syncBar','searchInput','pubGrid'];
+  if (j) document.body.removeChild(j);
   document.querySelector('header').style.display = '';
   document.querySelector('.sync-bar').style.display = '';
   document.querySelector('.controls').style.display = '';
   document.getElementById('pubGrid').style.display = '';
   document.querySelector('footer').style.display = '';
   document.body.style.background = '';
-  document.body.style.overflow = '';
-}
+};
 
-var exportBtn = document.getElementById('exportJournalBtn');
-if (exportBtn) {
-  exportBtn.addEventListener('click', function() {
-    // Hide app
-    document.querySelector('header').style.display = 'none';
-    document.querySelector('.sync-bar').style.display = 'none';
-    document.querySelector('.controls').style.display = 'none';
-    document.getElementById('pubGrid').style.display = 'none';
-    document.querySelector('footer').style.display = 'none';
-    document.body.style.background = '#fff';
-    // Build and inject journal
-    var journal = document.createElement('div');
-    journal.id = 'liveJournal';
-    journal.innerHTML = buildJournalHTML();
-    document.body.appendChild(journal);
-    window.scrollTo(0, 0);
-  });
-}
+(function() {
+  var btn = document.getElementById('exportJournalBtn');
+  if (btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelector('header').style.display = 'none';
+      document.querySelector('.sync-bar').style.display = 'none';
+      document.querySelector('.controls').style.display = 'none';
+      document.getElementById('pubGrid').style.display = 'none';
+      document.querySelector('footer').style.display = 'none';
+      document.body.style.background = '#fff';
+      var journal = document.createElement('div');
+      journal.id = 'liveJournal';
+      journal.innerHTML = buildJournalHTML();
+      document.body.appendChild(journal);
+      window.scrollTo(0, 0);
+    });
+  }
+})();
 
-// ── INIT ──────────────────────────────────────────────
-loadFromSupabase();
 
-// ── PINT JOURNAL EXPORT ───────────────────────────────
-var exportBtn = document.getElementById('exportJournalBtn');
+</script>
+</body>
+</html>
