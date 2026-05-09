@@ -219,6 +219,106 @@ footer a { color: var(--text-dim); text-decoration: none; }
   min-height: 50px; -webkit-appearance: none; transition: background 0.15s;
 }
 .modal-close-btn:active { background: var(--harp-light); }
+
+/* ══════════════════════════════
+   PRINT / PDF STYLES
+══════════════════════════════ */
+@media print {
+  /* Hide everything except the journal */
+  header, .sync-bar, .controls, .grid, .empty-state,
+  .overlay, .drawer, footer, .modal-overlay { display: none !important; }
+  
+  body { background: #fff !important; color: #1a1a1a !important; font-family: 'Georgia', serif; }
+  
+  .print-journal { display: block !important; }
+}
+
+@media screen {
+  .print-journal { display: none; }
+}
+
+/* Journal styles (used both in print and print-preview) */
+.print-journal {
+  font-family: 'Lato', Georgia, serif;
+  background: #fff;
+  color: #1a1a1a;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 3rem 2.5rem;
+}
+
+/* Cover */
+.pj-cover {
+  text-align: center;
+  padding-bottom: 2.5rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 3px solid #1a1a1a;
+}
+.pj-shamrock { font-size: 3rem; line-height: 1; margin-bottom: 0.5rem; }
+.pj-title { font-family: 'Playfair Display', Georgia, serif; font-size: 3rem; font-weight: 900; color: #1a1a1a; line-height: 1; margin-bottom: 0.3rem; }
+.pj-subtitle { font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; color: #666; margin-bottom: 1.5rem; }
+.pj-stats { display: inline-block; border: 2px solid #1a1a1a; border-radius: 8px; padding: 0.6rem 1.4rem; margin-bottom: 1rem; }
+.pj-stats-num { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; font-weight: 700; color: #1a1a1a; line-height: 1; }
+.pj-stats-label { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: #666; }
+.pj-generated { font-size: 0.72rem; color: #999; letter-spacing: 0.08em; margin-top: 0.5rem; }
+
+/* Section headers */
+.pj-section-head {
+  font-size: 0.65rem; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase;
+  color: #999; margin: 2rem 0 1rem; padding-bottom: 0.4rem;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Individual pub entry */
+.pj-entry {
+  padding: 1.1rem 0;
+  border-bottom: 1px solid #eee;
+  page-break-inside: avoid;
+}
+.pj-entry:last-child { border-bottom: none; }
+.pj-entry-state { font-size: 0.6rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: #999; margin-bottom: 0.2rem; }
+.pj-entry-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.15rem; }
+.pj-entry-meta { font-size: 0.78rem; color: #666; margin-bottom: 0.5rem; }
+.pj-entry-meta .pj-city { margin-right: 1rem; }
+.pj-entry-meta .pj-date { font-style: italic; color: #888; }
+.pj-entry-notes {
+  font-size: 0.82rem; color: #333; line-height: 1.65; font-style: italic;
+  padding-left: 0.8rem; border-left: 2px solid #c8a84b;
+  margin-top: 0.4rem;
+}
+
+/* Still thirsty list */
+.pj-remaining { column-count: 2; column-gap: 2rem; margin-top: 0.5rem; }
+.pj-remaining-item { font-size: 0.8rem; color: #555; padding: 0.25rem 0; break-inside: avoid; }
+.pj-remaining-item::before { content: "○  "; color: #bbb; }
+
+/* Footer */
+.pj-footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid #ddd; text-align: center; font-size: 0.68rem; color: #bbb; letter-spacing: 0.08em; }
+
+/* Print button (screen only) */
+.pj-print-bar {
+  position: sticky; top: 0; background: #fff; border-bottom: 1px solid #eee;
+  padding: 0.8rem 2.5rem; display: flex; align-items: center; justify-content: space-between;
+  z-index: 10;
+}
+.pj-print-bar-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #555; }
+.pj-btn { display: flex; gap: 0.75rem; }
+.pj-print-btn {
+  background: #1a1a1a; color: #fff; border: none; border-radius: 6px;
+  font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; padding: 0.55rem 1.1rem;
+  cursor: pointer; -webkit-appearance: none;
+}
+.pj-back-btn {
+  background: #fff; color: #555; border: 1px solid #ddd; border-radius: 6px;
+  font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; padding: 0.55rem 1.1rem;
+  cursor: pointer; -webkit-appearance: none;
+}
+@media print {
+  .pj-print-bar { display: none !important; }
+  .print-journal { padding: 1.5rem; }
+}
 </style>
 </head>
 <body>
@@ -315,7 +415,7 @@ footer a { color: var(--text-dim); text-decoration: none; }
 <footer>
   <div class="footer-tagline">"A fine pint of stout is worth crossing a state for."</div>
   <div class="footer-meta">Data: <a href="https://www.tastingtable.com/2121434/best-irish-pub-every-state/" target="_blank">Tasting Table</a> &nbsp;&middot;&nbsp; Sláinte! &nbsp;&middot;&nbsp; Synced via Supabase.</div>
-  <div class="footer-copy">&copy; 2026 <button class="footer-name-btn" id="dedicationBtn">Michael Pusateri</button> &nbsp;&middot;&nbsp; v1.0</div>
+  <div class="footer-copy">&copy; 2026 <button class="footer-name-btn" id="dedicationBtn">Michael Pusateri</button> &nbsp;&middot;&nbsp; v1.0 &nbsp;&middot;&nbsp; <button class="footer-name-btn" id="exportJournalBtn">export journal</button></div>
 </footer>
 
 <!-- Dedication Modal -->
@@ -618,6 +718,104 @@ function applyFilters() {
 // ── INIT ──────────────────────────────────────────────
 loadFromSupabase();
 
+// ── PINT JOURNAL EXPORT ───────────────────────────────
+var exportBtn = document.getElementById('exportJournalBtn');
+var printJournal = document.getElementById('printJournal');
+var pjContent = document.getElementById('pjContent');
+var pjBackBtn = document.getElementById('pjBackBtn');
+var pjPrintBtn = document.getElementById('pjPrintBtn');
+
+function buildJournal() {
+  var pulled = [];
+  var remaining = [];
+  PUBS.forEach(function(pub, idx) {
+    var entry = getEntry('pub_' + idx);
+    if (entry.visited) {
+      pulled.push({ pub: pub, entry: entry });
+    } else {
+      remaining.push(pub);
+    }
+  });
+
+  var today = new Date().toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+  var pct = Math.round(pulled.length / 50 * 100);
+
+  var html = '';
+
+  // Cover
+  html += '<div class="pj-cover">';
+  html += '<div class="pj-shamrock">&#9752;</div>';
+  html += '<div class="pj-title">50 Pints</div>';
+  html += '<div class="pj-subtitle">A Guinness Pilgrim&rsquo;s Journal</div>';
+  html += '<div class="pj-stats"><div class="pj-stats-num">' + pulled.length + ' of 50</div><div class="pj-stats-label">Pints Pulled &nbsp;&middot;&nbsp; ' + pct + '% of the New World Discovered</div></div>';
+  html += '<div class="pj-generated">Generated ' + today + '</div>';
+  html += '</div>';
+
+  // Pulled pints
+  if (pulled.length === 0) {
+    html += '<div class="pj-section-head">Pints Pulled</div>';
+    html += '<p style="color:#999;font-style:italic;font-size:0.85rem;padding:1rem 0;">No pints pulled yet — get out there, Sal.</p>';
+  } else {
+    html += '<div class="pj-section-head">Pints Pulled &mdash; ' + pulled.length + ' pub' + (pulled.length === 1 ? '' : 's') + '</div>';
+    pulled.forEach(function(item) {
+      html += '<div class="pj-entry">';
+      html += '<div class="pj-entry-state">' + item.pub.state + '</div>';
+      html += '<div class="pj-entry-name">' + item.pub.pub + '</div>';
+      html += '<div class="pj-entry-meta"><span class="pj-city">' + item.pub.city + '</span><span class="pj-date">' + (item.entry.date ? 'Pulled ' + item.entry.date : '') + '</span></div>';
+      if (item.entry.comment) {
+        html += '<div class="pj-entry-notes">' + item.entry.comment + '</div>';
+      }
+      html += '</div>';
+    });
+  }
+
+  // Still thirsty
+  if (remaining.length > 0) {
+    html += '<div class="pj-section-head" style="margin-top:2.5rem;">Still Thirsty &mdash; ' + remaining.length + ' state' + (remaining.length === 1 ? '' : 's') + ' remaining</div>';
+    html += '<div class="pj-remaining">';
+    remaining.forEach(function(pub) {
+      html += '<div class="pj-remaining-item">' + pub.state + ' &mdash; ' + pub.pub + '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Footer
+  html += '<div class="pj-footer">&copy; 2026 Michael Pusateri &nbsp;&middot;&nbsp; 50 Pints v1.0 &nbsp;&middot;&nbsp; Sl&aacute;inte!</div>';
+
+  return html;
+}
+
+if (exportBtn) {
+  exportBtn.addEventListener('click', function() {
+    pjContent.innerHTML = buildJournal();
+    printJournal.style.display = 'block';
+    document.getElementById('pubGrid').style.display = 'none';
+    document.querySelector('header').style.display = 'none';
+    document.querySelector('.sync-bar').style.display = 'none';
+    document.querySelector('.controls').style.display = 'none';
+    document.querySelector('footer').style.display = 'none';
+    window.scrollTo(0, 0);
+  });
+}
+
+if (pjBackBtn) {
+  pjBackBtn.addEventListener('click', function() {
+    printJournal.style.display = 'none';
+    document.getElementById('pubGrid').style.display = '';
+    document.querySelector('header').style.display = '';
+    document.querySelector('.sync-bar').style.display = '';
+    document.querySelector('.controls').style.display = '';
+    document.querySelector('footer').style.display = '';
+  });
+}
+
+if (pjPrintBtn) {
+  pjPrintBtn.addEventListener('click', function() {
+    window.print();
+  });
+}
+
+
 // ── DEDICATION MODAL ──────────────────────────────────
 var modalOverlay = document.getElementById('modalOverlay');
 var dedicationBtn = document.getElementById('dedicationBtn');
@@ -644,5 +842,18 @@ if (modalOverlay) {
 }
 
 </script>
+
+<!-- PRINT JOURNAL -->
+<div class="print-journal" id="printJournal" style="display:none;">
+  <div class="pj-print-bar">
+    <span class="pj-print-bar-title">Pint Journal Preview</span>
+    <div class="pj-btn">
+      <button class="pj-back-btn" id="pjBackBtn">&#8592; Back</button>
+      <button class="pj-print-btn" id="pjPrintBtn">Save as PDF</button>
+    </div>
+  </div>
+  <div id="pjContent"></div>
+</div>
+
 </body>
 </html>
