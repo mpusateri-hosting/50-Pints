@@ -806,6 +806,33 @@ window.closeJournal = function() {
 })();
 
 
+// ── DEDICATION MODAL ──────────────────────────────────
+(function() {
+  var overlay = document.getElementById('modalOverlay');
+  var openBtn = document.getElementById('dedicationBtn');
+  var closeBtn = document.getElementById('modalCloseBtn');
+  if (openBtn && overlay) {
+    openBtn.addEventListener('click', function() {
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+  }
+  if (closeBtn && overlay) {
+    closeBtn.addEventListener('click', function() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  }
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+})();
+
 </script>
 </body>
 </html>
