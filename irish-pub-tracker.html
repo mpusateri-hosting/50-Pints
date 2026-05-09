@@ -80,19 +80,20 @@ input[type="text"]:focus { border-color: var(--harp); }
 .pub-card.pulled::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--harp) 0%, var(--pulled) 100%); }
 .pub-card.hidden { display: none; }
 .card-top { display: flex; align-items: flex-start; gap: 0.85rem; margin-bottom: 0.55rem; }
-.pint-check { flex-shrink: 0; width: 44px; height: 44px; border: 1.5px solid var(--border-pulled); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; background: transparent; position: relative; z-index: 2; -webkit-appearance: none; }
-.pint-check svg.check-glass { width: 22px; height: 28px; opacity: 0.18; transition: opacity 0.15s; }
-.pint-check.pulled { background: var(--stout); border-color: var(--harp); }
-.pint-check.pulled svg.check-glass { opacity: 1; }
+.pint-indicator { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; pointer-events: none; font-size: 1.5rem; line-height: 1; }
+.pint-indicator .ei-empty { opacity: 0; }
+.pint-indicator .ei-full { display: none; }
+.pub-card.pulled .pint-indicator .ei-empty { display: none; }
+.pub-card.pulled .pint-indicator .ei-full { display: block; }
 .card-info { flex: 1; min-width: 0; }
-.state-label { font-size: 0.58rem; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.2rem; }
-.pub-name { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 700; color: var(--cream); line-height: 1.25; margin-bottom: 0.18rem; }
-.pub-city { font-size: 0.73rem; color: var(--text-muted); letter-spacing: 0.04em; }
-.pulled-date { font-size: 0.65rem; color: var(--harp); letter-spacing: 0.06em; margin-top: 0.12rem; font-style: italic; }
-.glass-icon { flex-shrink: 0; width: 28px; height: 40px; }
-.card-blurb { font-size: 0.74rem; color: var(--text-muted); line-height: 1.6; margin-top: 0.3rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.state-label { font-size: 0.68rem; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.25rem; }
+.pub-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--cream); line-height: 1.25; margin-bottom: 0.22rem; }
+.pub-city { font-size: 0.82rem; color: var(--text-muted); letter-spacing: 0.04em; }
+.pulled-date { font-size: 0.75rem; color: var(--harp); letter-spacing: 0.06em; margin-top: 0.15rem; font-style: italic; }
+
+.card-blurb { font-size: 0.85rem; color: var(--text-muted); line-height: 1.62; margin-top: 0.35rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card-comment-preview { font-size: 0.7rem; color: var(--harp); font-style: italic; margin-top: 0.45rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.card-hint { font-size: 0.65rem; color: var(--text-dim); margin-top: 0.5rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.3rem; }
+.card-hint { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.3rem; }
 .card-hint svg { width: 10px; height: 10px; flex-shrink: 0; }
 
 .empty-state { display: none; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-style: italic; font-family: 'Playfair Display', serif; font-size: 1.1rem; }
@@ -463,30 +464,14 @@ PUBS.forEach(function(pub, idx) {
   card.dataset.pub = pub.pub.toLowerCase();
   card.innerHTML =
     '<div class="card-top">' +
-      '<div class="pint-check ' + (entry.visited ? 'pulled' : '') + '" data-key="' + key + '">' +
-      '<svg class="check-glass" viewBox="0 0 22 28" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-        '<clipPath id="cc' + idx + '"><path d="M3.5 2 L2 26 Q2 27.5 3.5 27.5 L18.5 27.5 Q20 27.5 20 26 L18.5 2 Z"/></clipPath>' +
-        '<rect x="2" y="' + (entry.visited ? '10' : '27') + '" width="18" height="' + (entry.visited ? '17' : '0') + '" fill="#1e3a22" clip-path="url(#cc' + idx + ')" id="pc' + idx + '"/>' +
-        '<rect x="2" y="2" width="18" height="5" fill="#e8ddb0" clip-path="url(#cc' + idx + ')" opacity="' + (entry.visited ? '0.9' : '0.15') + '" id="pf' + idx + '"/>' +
-        '<path d="M3.5 2 L18.5 2" stroke="#c8a84b" stroke-width="1.2" stroke-linecap="round"/>' +
-        '<path d="M3.5 2 L2 26 Q2 27.5 3.5 27.5 L18.5 27.5 Q20 27.5 20 26 L18.5 2 Z" fill="none" stroke="#c8a84b" stroke-width="1.2"/>' +
-        '<line x1="6" y1="5" x2="5.5" y2="25" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-linecap="round"/>' +
-      '</svg>' +
-    '</div>' +
+      '<div class="pint-indicator"><span class="ei-empty">🍺</span><span class="ei-full">🍺</span></div>' +
       '<div class="card-info">' +
         '<div class="state-label">' + pub.state + '</div>' +
         '<div class="pub-name">' + pub.pub + '</div>' +
         '<div class="pub-city">' + pub.city + '</div>' +
         (entry.visited && entry.date ? '<div class="pulled-date">Pint pulled ' + entry.date + '</div>' : '<div class="pulled-date" style="display:none"></div>') +
       '</div>' +
-      '<svg class="glass-icon" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-        '<clipPath id="gc' + idx + '"><path d="M5 3 L3.5 37 Q3.5 38.5 5 38.5 L23 38.5 Q24.5 38.5 24.5 37 L23 3 Z"/></clipPath>' +
-        '<rect x="3.5" y="' + (entry.visited ? '14' : '38') + '" width="21" height="' + (entry.visited ? '24' : '0') + '" fill="#1e3a22" clip-path="url(#gc' + idx + ')" id="gs' + idx + '"/>' +
-        '<rect x="3.5" y="3" width="21" height="7" fill="#e8ddb0" clip-path="url(#gc' + idx + ')" opacity="' + (entry.visited ? '0.85' : '0.06') + '" id="gf' + idx + '"/>' +
-        '<path d="M5 3 L23 3" stroke="#2e2010" stroke-width="1.2" stroke-linecap="round"/>' +
-        '<path d="M5 3 L3.5 37 Q3.5 38.5 5 38.5 L23 38.5 Q24.5 38.5 24.5 37 L23 3 Z" fill="none" stroke="#2a2010" stroke-width="1.2"/>' +
-        '<line x1="8" y1="7" x2="7" y2="36" stroke="rgba(255,255,255,0.04)" stroke-width="1.5" stroke-linecap="round"/>' +
-      '</svg>' +
+
     '</div>' +
     '<div class="card-blurb">' + pub.blurb.substring(0, 130) + '…</div>' +
     (entry.comment ? '<div class="card-comment-preview">&ldquo;' + entry.comment + '&rdquo;</div>' : '') +
@@ -566,20 +551,7 @@ document.getElementById('dComment').addEventListener('input', function() {
 
 // ── CARD CLICKS ───────────────────────────────────────
 grid.addEventListener('click', function(e) {
-  var check = e.target.closest('.pint-check');
-  if (check) {
-    e.stopPropagation();
-    var key = check.dataset.key;
-    var entry = getEntry(key);
-    entry.visited = !entry.visited;
-    entry.date = entry.visited ? new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : null;
-    localCache[key] = entry;
-    saveCache();
-    debouncedSave(key, entry);
-    refreshCard(key, entry);
-    updateProgress();
-    return;
-  }
+  // Checkbox removed — drawer toggle is the only way to mark a pint pulled
   var card = e.target.closest('.pub-card');
   if (card) openDrawer(parseInt(card.dataset.idx, 10));
 });
@@ -589,26 +561,13 @@ function refreshCard(key, entry) {
   var card = grid.querySelector('.pub-card[data-key="' + key + '"]');
   if (!card) return;
   var idx = parseInt(card.dataset.idx, 10);
-  var check = card.querySelector('.pint-check');
   var dateEl = card.querySelector('.pulled-date');
-  var stout = document.getElementById('gs' + idx);
-  var foam = document.getElementById('gf' + idx);
-  var pintStout = document.getElementById('pc' + idx);
-  var pintFoam = document.getElementById('pf' + idx);
   if (entry.visited) {
-    card.classList.add('pulled'); if (check) check.classList.add('pulled');
+    card.classList.add('pulled');
     if (dateEl) { dateEl.textContent = 'Pint pulled ' + entry.date; dateEl.style.display = ''; }
-    if (stout) { stout.setAttribute('y','14'); stout.setAttribute('height','24'); }
-    if (foam) foam.setAttribute('opacity','0.85');
-    if (pintStout) { pintStout.setAttribute('y','10'); pintStout.setAttribute('height','17'); }
-    if (pintFoam) pintFoam.setAttribute('opacity','0.9');
   } else {
-    card.classList.remove('pulled'); if (check) check.classList.remove('pulled');
+    card.classList.remove('pulled');
     if (dateEl) { dateEl.textContent = ''; dateEl.style.display = 'none'; }
-    if (stout) { stout.setAttribute('y','38'); stout.setAttribute('height','0'); }
-    if (foam) foam.setAttribute('opacity','0.06');
-    if (pintStout) { pintStout.setAttribute('y','27'); pintStout.setAttribute('height','0'); }
-    if (pintFoam) pintFoam.setAttribute('opacity','0.15');
   }
   var preview = card.querySelector('.card-comment-preview');
   if (entry.comment) {
@@ -630,8 +589,6 @@ function updateProgress() {
   var bfEl = document.getElementById('barFill');
   if (bfEl) { bfEl.style.width = pct + '%'; if (count > 0) bfEl.classList.add('has-pints'); else bfEl.classList.remove('has-pints'); }
   var blEl = document.getElementById('barLabel'); if (blEl) blEl.textContent = pct + '% of the New World Discovered';
-  var gsEl = document.getElementById('glassStout'); if (gsEl) { var fh = Math.round(count/50*40); gsEl.setAttribute('y', String(49-fh)); gsEl.setAttribute('height', String(fh)); }
-  var gfEl = document.getElementById('glassFoam'); if (gfEl) gfEl.setAttribute('opacity', count > 0 ? '0.85' : '0');
 }
 updateProgress();
 
