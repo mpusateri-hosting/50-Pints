@@ -93,7 +93,6 @@ input[type="text"]:focus { border-color: var(--harp); }
 
 .card-blurb { font-size: 0.85rem; color: var(--text-muted); line-height: 1.62; margin-top: 0.35rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card-comment-preview { font-size: 0.7rem; color: var(--harp); font-style: italic; margin-top: 0.45rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.card-photo-badge { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; }
 .card-hint { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.3rem; }
 .card-hint svg { width: 10px; height: 10px; flex-shrink: 0; }
 
@@ -320,50 +319,6 @@ footer a { color: var(--text-dim); text-decoration: none; }
   .pj-print-bar { display: none !important; }
   .print-journal { padding: 1.5rem; }
 }
-
-/* PHOTO SECTION IN DRAWER */
-.photo-section { margin-top: 1.4rem; }
-.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 0.6rem; }
-.photo-thumb {
-  position: relative; aspect-ratio: 1; border-radius: 6px;
-  overflow: hidden; background: #0a0c0a; border: 1px solid var(--border);
-  cursor: pointer;
-}
-.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.photo-thumb .photo-delete {
-  position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
-  background: rgba(0,0,0,0.75); border: none; border-radius: 50%;
-  color: #fff; font-size: 0.7rem; cursor: pointer; display: flex;
-  align-items: center; justify-content: center; line-height: 1;
-}
-.photo-add-btn {
-  aspect-ratio: 1; border-radius: 6px; border: 1.5px dashed var(--border-pulled);
-  background: transparent; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; cursor: pointer;
-  color: var(--text-dim); gap: 0.3rem; font-size: 0.65rem;
-  font-family: 'Lato', sans-serif; font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; transition: all 0.15s; -webkit-appearance: none;
-}
-.photo-add-btn:active { border-color: var(--harp); color: var(--harp); }
-.photo-add-btn svg { width: 20px; height: 20px; }
-.photo-upload-status {
-  font-size: 0.68rem; color: var(--text-muted); margin-top: 0.4rem;
-  font-style: italic; min-height: 1rem; text-align: center;
-}
-/* Fullscreen photo viewer */
-.photo-viewer {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.96);
-  z-index: 400; display: none; align-items: center; justify-content: center;
-  padding: 2rem;
-}
-.photo-viewer.open { display: flex; }
-.photo-viewer img { max-width: 100%; max-height: 90vh; border-radius: 8px; object-fit: contain; }
-.photo-viewer-close {
-  position: absolute; top: calc(1rem + env(safe-area-inset-top)); right: 1rem;
-  width: 44px; height: 44px; background: rgba(255,255,255,0.1); border: none;
-  border-radius: 50%; color: #fff; font-size: 1.2rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
 </style>
 </head>
 <body>
@@ -454,19 +409,7 @@ footer a { color: var(--text-dim); text-decoration: none; }
     </div>
     <div class="section-label">Tasting Notes</div>
     <textarea class="drawer-textarea" id="dComment" placeholder="How was the Guinness? What did you eat? Who raised a glass with you?"></textarea>
-    <div class="photo-section" id="photoSection" style="display:none;">
-      <div class="section-label" style="margin-top:1.4rem;">Photos</div>
-      <div class="photo-grid" id="photoGrid"></div>
-      <div class="photo-upload-status" id="photoStatus"></div>
-      <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none;">
-    </div>
   </div>
-</div>
-
-<!-- Fullscreen photo viewer -->
-<div class="photo-viewer" id="photoViewer">
-  <button class="photo-viewer-close" id="photoViewerClose">&times;</button>
-  <img id="photoViewerImg" src="" alt="">
 </div>
 
 <footer>
@@ -491,30 +434,11 @@ footer a { color: var(--text-dim); text-decoration: none; }
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script>
 // ── SUPABASE CONFIG ──────────────────────────────
 var SUPABASE_URL = 'https://jzayunzneqpbesrmusmq.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_2V2h7wTxkKaMm4IbNofz3w_fJlmTVMH';
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ── FIREBASE CONFIG ──────────────────────────────
-var firebaseConfig = {
-  apiKey: "AIzaSyArXxVm6-tqjlilna4D8N9vocg8JgPiSeY",
-  authDomain: "pints-b8976.firebaseapp.com",
-  projectId: "pints-b8976",
-  storageBucket: "pints-b8976.firebasestorage.app",
-  messagingSenderId: "648365106064",
-  appId: "1:648365106064:web:b5b6166013ce9e7d46c915"
-};
-var fbStorage = null;
-try {
-  firebase.initializeApp(firebaseConfig);
-  fbStorage = firebase.storage();
-} catch(e) {
-  console.warn('Firebase init error:', e);
-}
 
 // ── PUB DATA ─────────────────────────────────────
 var PUBS = [
@@ -574,7 +498,7 @@ var PUBS = [
 var localCache = {};
 try { var _lc = localStorage.getItem('pintPilgrim_cache'); if (_lc) localCache = JSON.parse(_lc); } catch(e) {}
 function saveCache() { try { localStorage.setItem('pintPilgrim_cache', JSON.stringify(localCache)); } catch(e) {} }
-function getEntry(key) { return localCache[key] || { visited: false, date: null, comment: '', photos: [] }; }
+function getEntry(key) { return localCache[key] || { visited: false, date: null, comment: '' }; }
 
 // ── SYNC STATUS ───────────────────────────────────────
 function setSyncStatus(state, msg) {
@@ -593,9 +517,7 @@ async function loadFromSupabase() {
     if (result.error) throw result.error;
     var rows = result.data || [];
     rows.forEach(function(row) {
-      var photos = [];
-      try { if (row.photos) photos = JSON.parse(row.photos); } catch(e) {}
-      localCache[row.pub_key] = { visited: row.visited || false, date: row.visit_date || null, comment: row.comment || '', photos: photos };
+      localCache[row.pub_key] = { visited: row.visited || false, date: row.visit_date || null, comment: row.comment || '' };
     });
     saveCache();
     var pulled = rows.filter(function(r) { return r.visited; }).length;
@@ -614,7 +536,7 @@ async function saveToSupabase(key, entry) {
   setSyncStatus('syncing', 'Saving…');
   try {
     var result = await sb.from('pint_visits').upsert(
-      { pub_key: key, visited: entry.visited, visit_date: entry.date, comment: entry.comment, photos: JSON.stringify(entry.photos || []) },
+      { pub_key: key, visited: entry.visited, visit_date: entry.date, comment: entry.comment },
       { onConflict: 'pub_key' }
     );
     if (result.error) throw result.error;
@@ -680,11 +602,6 @@ function openDrawer(idx) {
   var q = encodeURIComponent(pub.address);
   document.getElementById('btnGoogle').href = 'https://www.google.com/maps/search/?api=1&query=' + q;
   document.getElementById('btnApple').href = 'https://maps.apple.com/?q=' + q;
-  // Photos
-  var photoSection = document.getElementById('photoSection');
-  if (photoSection) photoSection.style.display = entry.visited ? 'block' : 'none';
-  renderPhotoGrid(entry.photos || []);
-  document.getElementById('photoStatus').textContent = '';
   overlay.classList.add('open');
   drawer.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -701,7 +618,7 @@ function closeDrawer() {
 
 overlay.addEventListener('click', closeDrawer);
 document.getElementById('drawerClose').addEventListener('click', closeDrawer);
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDrawer(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { var v = document.getElementById('photoViewer'); if (v && v.classList.contains('open')) { v.classList.remove('open'); } else { closeDrawer(); } } });
 
 document.getElementById('dVisitToggle').addEventListener('change', function() {
   if (!activeKey) return;
@@ -713,8 +630,6 @@ document.getElementById('dVisitToggle').addEventListener('change', function() {
   debouncedSave(activeKey, entry);
   document.getElementById('dPullDate').textContent = entry.visited && entry.date ? 'Pulled: ' + entry.date : 'Not yet pulled';
   document.getElementById('dBadge').innerHTML = entry.visited ? '<div class="pulled-badge">🍺 Pint Pulled' + (entry.date ? ' &middot; ' + entry.date : '') + '</div>' : '';
-  var photoSection = document.getElementById('photoSection');
-  if (photoSection) photoSection.style.display = entry.visited ? 'block' : 'none';
   refreshCard(activeKey, entry);
   updateProgress();
 });
@@ -753,19 +668,6 @@ function refreshCard(key, entry) {
   } else {
     card.classList.remove('pulled');
     if (dateEl) { dateEl.textContent = ''; dateEl.style.display = 'none'; }
-  }
-  // Photo count indicator on card
-  var photoBadge = card.querySelector('.card-photo-badge');
-  var photos = entry.photos || [];
-  if (photos.length > 0) {
-    if (!photoBadge) {
-      photoBadge = document.createElement('div');
-      photoBadge.className = 'card-photo-badge';
-      card.querySelector('.card-hint').before(photoBadge);
-    }
-    photoBadge.textContent = '📷 ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '');
-  } else if (photoBadge) {
-    photoBadge.remove();
   }
   var preview = card.querySelector('.card-comment-preview');
   if (entry.comment) {
@@ -856,14 +758,6 @@ function buildJournalHTML() {
       if (item.entry.comment) {
         h += '<div style="font-size:0.82rem;color:#333;line-height:1.65;font-style:italic;padding-left:0.8rem;border-left:3px solid #c8a84b;margin-top:0.4rem;">' + item.entry.comment + '</div>';
       }
-      var photos = item.entry.photos || [];
-      if (photos.length > 0) {
-        h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:0.6rem;">';
-        photos.forEach(function(url) {
-          h += '<img src="' + url + '" style="width:120px;height:90px;object-fit:cover;border-radius:4px;border:1px solid #ddd;" alt="Visit photo">';
-        });
-        h += '</div>';
-      }
       h += '</div>';
     });
   }
@@ -910,124 +804,6 @@ window.closeJournal = function() {
     });
   }
 })();
-
-
-
-// ── PHOTO FEATURE ─────────────────────────────────────
-var MAX_PHOTOS = 5;
-
-function renderPhotoGrid(photos) {
-  var grid = document.getElementById('photoGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  photos = photos || [];
-  photos.forEach(function(url, i) {
-    var thumb = document.createElement('div');
-    thumb.className = 'photo-thumb';
-    thumb.innerHTML = '<img src="' + url + '" alt="Visit photo ' + (i+1) + '" loading="lazy">' +
-      '<button class="photo-delete" data-idx="' + i + '" title="Remove photo">&times;</button>';
-    thumb.querySelector('img').addEventListener('click', function() { openPhotoViewer(url); });
-    thumb.querySelector('.photo-delete').addEventListener('click', function(e) {
-      e.stopPropagation();
-      deletePhoto(parseInt(this.dataset.idx, 10));
-    });
-    grid.appendChild(thumb);
-  });
-  // Add button if under limit
-  if (photos.length < MAX_PHOTOS) {
-    var addBtn = document.createElement('button');
-    addBtn.className = 'photo-add-btn';
-    addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add Photo';
-    addBtn.addEventListener('click', function() {
-      document.getElementById('photoFileInput').click();
-    });
-    grid.appendChild(addBtn);
-  }
-}
-
-function deletePhoto(idx) {
-  if (!activeKey) return;
-  var entry = getEntry(activeKey);
-  var photos = entry.photos || [];
-  // Remove from Firebase Storage
-  var url = photos[idx];
-  if (url) {
-    if (fbStorage) {
-    try {
-      var ref = fbStorage.refFromURL(url);
-      ref.delete().catch(function(e) { console.warn('Firebase delete error:', e); });
-    } catch(e) { console.warn('Could not delete from storage:', e); }
-  }
-  }
-  photos.splice(idx, 1);
-  entry.photos = photos;
-  localCache[activeKey] = entry;
-  saveCache();
-  debouncedSave(activeKey, entry);
-  renderPhotoGrid(photos);
-  refreshCard(activeKey, entry);
-}
-
-function openPhotoViewer(url) {
-  var viewer = document.getElementById('photoViewer');
-  var img = document.getElementById('photoViewerImg');
-  if (viewer && img) { img.src = url; viewer.classList.add('open'); }
-}
-
-document.getElementById('photoViewerClose').addEventListener('click', function() {
-  var viewer = document.getElementById('photoViewer');
-  if (viewer) viewer.classList.remove('open');
-});
-
-document.getElementById('photoFileInput').addEventListener('change', function(e) {
-  var files = Array.from(e.target.files || []);
-  if (!files.length || !activeKey) return;
-  var entry = getEntry(activeKey);
-  var existing = entry.photos || [];
-  var slots = MAX_PHOTOS - existing.length;
-  if (slots <= 0) { document.getElementById('photoStatus').textContent = 'Max 5 photos per pub.'; return; }
-  files = files.slice(0, slots);
-  document.getElementById('photoStatus').textContent = 'Uploading ' + files.length + ' photo' + (files.length > 1 ? 's' : '') + '...';
-  setSyncStatus('syncing', 'Uploading photo...');
-  var uploaded = 0;
-  if (!fbStorage) {
-    document.getElementById('photoStatus').textContent = 'Photo storage not available. Check connection.';
-    return;
-  }
-  files.forEach(function(file) {
-    var ext = file.name.split('.').pop() || 'jpg';
-    var path = '50-pints/' + activeKey + '/' + Date.now() + '_' + Math.random().toString(36).substr(2,6) + '.' + ext;
-    var ref = fbStorage.ref(path);
-    ref.put(file).then(function(snap) {
-      return snap.ref.getDownloadURL();
-    }).then(function(url) {
-      var ent = getEntry(activeKey);
-      var ph = ent.photos || [];
-      ph.push(url);
-      ent.photos = ph;
-      localCache[activeKey] = ent;
-      saveCache();
-      debouncedSave(activeKey, ent);
-      renderPhotoGrid(ph);
-      refreshCard(activeKey, ent);
-      uploaded++;
-      if (uploaded === files.length) {
-        document.getElementById('photoStatus').textContent = 'Uploaded successfully.';
-        setSyncStatus('synced', 'Photo saved ✓');
-        setTimeout(function() {
-          var s = document.getElementById('photoStatus');
-          if (s) s.textContent = '';
-        }, 3000);
-      }
-    }).catch(function(err) {
-      console.error('Upload error:', err);
-      document.getElementById('photoStatus').textContent = 'Upload failed. Check connection.';
-      setSyncStatus('error', 'Photo upload failed');
-    });
-  });
-  // Reset input so same file can be re-selected
-  e.target.value = '';
-});
 
 
 // ── DEDICATION MODAL ──────────────────────────────────
