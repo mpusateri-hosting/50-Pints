@@ -319,6 +319,30 @@ footer a { color: var(--text-dim); text-decoration: none; }
   .pj-print-bar { display: none !important; }
   .print-journal { padding: 1.5rem; }
 }
+
+/* PHOTO SECTION */
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 0.6rem; }
+.photo-thumb { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: #0a0c0a; border: 1px solid var(--border); cursor: pointer; }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-thumb .photo-delete { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; background: rgba(0,0,0,0.75); border: none; border-radius: 50%; color: #fff; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.photo-add-btn { aspect-ratio: 1; border-radius: 6px; border: 1.5px dashed var(--border-pulled); background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dim); gap: 0.3rem; font-size: 0.62rem; font-family: 'Lato', sans-serif; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; transition: all 0.15s; -webkit-appearance: none; }
+.photo-add-btn:active { border-color: var(--harp); color: var(--harp); }
+.photo-add-btn svg { width: 20px; height: 20px; }
+.photo-upload-status { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.4rem; font-style: italic; min-height: 1rem; text-align: center; }
+.card-photo-badge { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; }
+/* Fullscreen viewer */
+.photo-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 400; display: none; align-items: center; justify-content: center; padding: 2rem; }
+.photo-viewer.open { display: flex; }
+.photo-viewer img { max-width: 100%; max-height: 85vh; border-radius: 8px; object-fit: contain; }
+.photo-viewer-close { position: absolute; top: calc(1rem + env(safe-area-inset-top)); right: 1rem; width: 44px; height: 44px; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; color: #fff; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.photo-viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; background: rgba(255,255,255,0.08); border: none; color: #fff; font-size: 2.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; transition: background 0.15s; -webkit-appearance: none; line-height: 1; }
+.photo-viewer-nav:active { background: rgba(255,255,255,0.2); }
+.photo-viewer-nav.hidden { opacity: 0; pointer-events: none; }
+.photo-viewer-prev { left: 0; border-radius: 0 8px 8px 0; }
+.photo-viewer-next { right: 0; border-radius: 8px 0 0 8px; }
+.photo-viewer-dots { position: absolute; bottom: calc(1.5rem + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; }
+.photo-viewer-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.35); transition: background 0.2s, transform 0.2s; }
+.photo-viewer-dot.active { background: #fff; transform: scale(1.3); }
 </style>
 </head>
 <body>
@@ -409,7 +433,22 @@ footer a { color: var(--text-dim); text-decoration: none; }
     </div>
     <div class="section-label">Tasting Notes</div>
     <textarea class="drawer-textarea" id="dComment" placeholder="How was the Guinness? What did you eat? Who raised a glass with you?"></textarea>
+    <div id="photoSection" style="display:none; margin-top:1.4rem;">
+      <div class="section-label">Photos</div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <div class="photo-upload-status" id="photoStatus"></div>
+      <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none;">
+    </div>
   </div>
+</div>
+
+<!-- Fullscreen photo viewer -->
+<div class="photo-viewer" id="photoViewer">
+  <button class="photo-viewer-close" id="photoViewerClose">&times;</button>
+  <button class="photo-viewer-nav photo-viewer-prev" id="photoViewerPrev">&#8249;</button>
+  <img id="photoViewerImg" src="" alt="">
+  <button class="photo-viewer-nav photo-viewer-next" id="photoViewerNext">&#8250;</button>
+  <div class="photo-viewer-dots" id="photoViewerDots"></div>
 </div>
 
 <footer>
@@ -434,11 +473,30 @@ footer a { color: var(--text-dim); text-decoration: none; }
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script>
 // ── SUPABASE CONFIG ──────────────────────────────
 var SUPABASE_URL = 'https://jzayunzneqpbesrmusmq.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_2V2h7wTxkKaMm4IbNofz3w_fJlmTVMH';
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── FIREBASE CONFIG ──────────────────────────────
+var firebaseConfig = {
+  apiKey: "AIzaSyArXxVm6-tqjlilna4D8N9vocg8JgPiSeY",
+  authDomain: "pints-b8976.firebaseapp.com",
+  projectId: "pints-b8976",
+  storageBucket: "pints-b8976.firebasestorage.app",
+  messagingSenderId: "648365106064",
+  appId: "1:648365106064:web:b5b6166013ce9e7d46c915"
+};
+var fbStorage = null;
+try {
+  firebase.initializeApp(firebaseConfig);
+  fbStorage = firebase.storage();
+} catch(e) {
+  console.warn('Firebase init error:', e);
+}
 
 // ── PUB DATA ─────────────────────────────────────
 var PUBS = [
@@ -498,7 +556,7 @@ var PUBS = [
 var localCache = {};
 try { var _lc = localStorage.getItem('pintPilgrim_cache'); if (_lc) localCache = JSON.parse(_lc); } catch(e) {}
 function saveCache() { try { localStorage.setItem('pintPilgrim_cache', JSON.stringify(localCache)); } catch(e) {} }
-function getEntry(key) { return localCache[key] || { visited: false, date: null, comment: '' }; }
+function getEntry(key) { return localCache[key] || { visited: false, date: null, comment: '', photos: [] }; }
 
 // ── SYNC STATUS ───────────────────────────────────────
 function setSyncStatus(state, msg) {
@@ -517,7 +575,9 @@ async function loadFromSupabase() {
     if (result.error) throw result.error;
     var rows = result.data || [];
     rows.forEach(function(row) {
-      localCache[row.pub_key] = { visited: row.visited || false, date: row.visit_date || null, comment: row.comment || '' };
+      var photos = [];
+      try { if (row.photos) photos = JSON.parse(row.photos); } catch(e) {}
+      localCache[row.pub_key] = { visited: row.visited || false, date: row.visit_date || null, comment: row.comment || '', photos: photos };
     });
     saveCache();
     var pulled = rows.filter(function(r) { return r.visited; }).length;
@@ -536,7 +596,7 @@ async function saveToSupabase(key, entry) {
   setSyncStatus('syncing', 'Saving…');
   try {
     var result = await sb.from('pint_visits').upsert(
-      { pub_key: key, visited: entry.visited, visit_date: entry.date, comment: entry.comment },
+      { pub_key: key, visited: entry.visited, visit_date: entry.date, comment: entry.comment, photos: JSON.stringify(entry.photos || []) },
       { onConflict: 'pub_key' }
     );
     if (result.error) throw result.error;
@@ -602,6 +662,10 @@ function openDrawer(idx) {
   var q = encodeURIComponent(pub.address);
   document.getElementById('btnGoogle').href = 'https://www.google.com/maps/search/?api=1&query=' + q;
   document.getElementById('btnApple').href = 'https://maps.apple.com/?q=' + q;
+  var ps = document.getElementById('photoSection');
+  if (ps) ps.style.display = entry.visited ? 'block' : 'none';
+  renderPhotoGrid(entry.photos || []);
+  document.getElementById('photoStatus').textContent = '';
   overlay.classList.add('open');
   drawer.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -618,7 +682,7 @@ function closeDrawer() {
 
 overlay.addEventListener('click', closeDrawer);
 document.getElementById('drawerClose').addEventListener('click', closeDrawer);
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { var v = document.getElementById('photoViewer'); if (v && v.classList.contains('open')) { v.classList.remove('open'); } else { closeDrawer(); } } });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { var v = document.getElementById('photoViewer'); if (v && v.classList.contains('open')) { closePhotoViewer(); } else { closeDrawer(); } } if (e.key === 'ArrowRight') { var v2 = document.getElementById('photoViewer'); if (v2 && v2.classList.contains('open') && viewerIndex < viewerPhotos.length - 1) { viewerIndex++; showViewerPhoto(viewerIndex); } } if (e.key === 'ArrowLeft') { var v3 = document.getElementById('photoViewer'); if (v3 && v3.classList.contains('open') && viewerIndex > 0) { viewerIndex--; showViewerPhoto(viewerIndex); } } });
 
 document.getElementById('dVisitToggle').addEventListener('change', function() {
   if (!activeKey) return;
@@ -630,6 +694,8 @@ document.getElementById('dVisitToggle').addEventListener('change', function() {
   debouncedSave(activeKey, entry);
   document.getElementById('dPullDate').textContent = entry.visited && entry.date ? 'Pulled: ' + entry.date : 'Not yet pulled';
   document.getElementById('dBadge').innerHTML = entry.visited ? '<div class="pulled-badge">🍺 Pint Pulled' + (entry.date ? ' &middot; ' + entry.date : '') + '</div>' : '';
+  var ps = document.getElementById('photoSection');
+  if (ps) ps.style.display = entry.visited ? 'block' : 'none';
   refreshCard(activeKey, entry);
   updateProgress();
 });
@@ -669,6 +735,12 @@ function refreshCard(key, entry) {
     card.classList.remove('pulled');
     if (dateEl) { dateEl.textContent = ''; dateEl.style.display = 'none'; }
   }
+  var photoBadge = card.querySelector('.card-photo-badge');
+  var photos = entry.photos || [];
+  if (photos.length > 0) {
+    if (!photoBadge) { photoBadge = document.createElement('div'); photoBadge.className = 'card-photo-badge'; card.querySelector('.card-hint').before(photoBadge); }
+    photoBadge.textContent = '📷 ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '');
+  } else if (photoBadge) { photoBadge.remove(); }
   var preview = card.querySelector('.card-comment-preview');
   if (entry.comment) {
     if (!preview) { preview = document.createElement('div'); preview.className = 'card-comment-preview'; card.querySelector('.card-hint').before(preview); }
@@ -758,6 +830,14 @@ function buildJournalHTML() {
       if (item.entry.comment) {
         h += '<div style="font-size:0.82rem;color:#333;line-height:1.65;font-style:italic;padding-left:0.8rem;border-left:3px solid #c8a84b;margin-top:0.4rem;">' + item.entry.comment + '</div>';
       }
+      var jPhotos = item.entry.photos || [];
+      if (jPhotos.length > 0) {
+        h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:0.6rem;">';
+        jPhotos.forEach(function(url) {
+          h += '<img src="' + url + '" style="width:120px;height:90px;object-fit:cover;border-radius:4px;border:1px solid #ddd;" alt="Visit photo">';
+        });
+        h += '</div>';
+      }
       h += '</div>';
     });
   }
@@ -805,6 +885,159 @@ window.closeJournal = function() {
   }
 })();
 
+
+
+// ── PHOTO FEATURE ─────────────────────────────────────
+var MAX_PHOTOS = 5;
+var viewerPhotos = [];
+var viewerIndex = 0;
+var viewerTouchStartX = 0;
+
+function renderPhotoGrid(photos) {
+  var grid = document.getElementById('photoGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  photos = photos || [];
+  photos.forEach(function(url, i) {
+    var thumb = document.createElement('div');
+    thumb.className = 'photo-thumb';
+    var img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Visit photo ' + (i+1);
+    img.loading = 'lazy';
+    img.addEventListener('click', function() { openPhotoViewer(url); });
+    var del = document.createElement('button');
+    del.className = 'photo-delete';
+    del.innerHTML = '&times;';
+    del.dataset.idx = String(i);
+    del.addEventListener('click', function(e) { e.stopPropagation(); deletePhoto(parseInt(this.dataset.idx, 10)); });
+    thumb.appendChild(img);
+    thumb.appendChild(del);
+    grid.appendChild(thumb);
+  });
+  if (photos.length < MAX_PHOTOS) {
+    var addBtn = document.createElement('button');
+    addBtn.className = 'photo-add-btn';
+    addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add Photo';
+    addBtn.addEventListener('click', function() { document.getElementById('photoFileInput').click(); });
+    grid.appendChild(addBtn);
+  }
+}
+
+function deletePhoto(idx) {
+  if (!activeKey) return;
+  var entry = getEntry(activeKey);
+  var photos = entry.photos || [];
+  var url = photos[idx];
+  if (url && fbStorage) {
+    try { fbStorage.refFromURL(url).delete().catch(function(e) { console.warn('FB delete:', e); }); }
+    catch(e) { console.warn('FB delete err:', e); }
+  }
+  photos.splice(idx, 1);
+  entry.photos = photos;
+  localCache[activeKey] = entry;
+  saveCache();
+  debouncedSave(activeKey, entry);
+  renderPhotoGrid(photos);
+  refreshCard(activeKey, entry);
+}
+
+function openPhotoViewer(url) {
+  var entry = activeKey ? getEntry(activeKey) : null;
+  viewerPhotos = (entry && entry.photos && entry.photos.length) ? entry.photos : [url];
+  viewerIndex = viewerPhotos.indexOf(url);
+  if (viewerIndex === -1) viewerIndex = 0;
+  showViewerPhoto(viewerIndex);
+  var viewer = document.getElementById('photoViewer');
+  if (viewer) viewer.classList.add('open');
+}
+
+function showViewerPhoto(idx) {
+  var img = document.getElementById('photoViewerImg');
+  var prev = document.getElementById('photoViewerPrev');
+  var next = document.getElementById('photoViewerNext');
+  var dots = document.getElementById('photoViewerDots');
+  if (!img) return;
+  img.src = viewerPhotos[idx] || '';
+  if (prev) prev.classList.toggle('hidden', idx === 0);
+  if (next) next.classList.toggle('hidden', idx === viewerPhotos.length - 1);
+  if (dots) {
+    dots.innerHTML = '';
+    if (viewerPhotos.length > 1) {
+      viewerPhotos.forEach(function(_, i) {
+        var dot = document.createElement('div');
+        dot.className = 'photo-viewer-dot' + (i === idx ? ' active' : '');
+        dots.appendChild(dot);
+      });
+    }
+  }
+}
+
+function closePhotoViewer() {
+  var viewer = document.getElementById('photoViewer');
+  if (viewer) viewer.classList.remove('open');
+}
+
+document.getElementById('photoViewerClose').addEventListener('click', closePhotoViewer);
+document.getElementById('photoViewerPrev').addEventListener('click', function() {
+  if (viewerIndex > 0) { viewerIndex--; showViewerPhoto(viewerIndex); }
+});
+document.getElementById('photoViewerNext').addEventListener('click', function() {
+  if (viewerIndex < viewerPhotos.length - 1) { viewerIndex++; showViewerPhoto(viewerIndex); }
+});
+
+var photoViewer = document.getElementById('photoViewer');
+photoViewer.addEventListener('touchstart', function(e) {
+  viewerTouchStartX = e.touches[0].clientX;
+}, { passive: true });
+photoViewer.addEventListener('touchend', function(e) {
+  var dx = e.changedTouches[0].clientX - viewerTouchStartX;
+  if (Math.abs(dx) < 40) return;
+  if (dx < 0 && viewerIndex < viewerPhotos.length - 1) { viewerIndex++; showViewerPhoto(viewerIndex); }
+  if (dx > 0 && viewerIndex > 0) { viewerIndex--; showViewerPhoto(viewerIndex); }
+}, { passive: true });
+
+document.getElementById('photoFileInput').addEventListener('change', function(e) {
+  var files = Array.from(e.target.files || []);
+  if (!files.length || !activeKey) return;
+  if (!fbStorage) { document.getElementById('photoStatus').textContent = 'Photo storage unavailable. Check connection.'; return; }
+  var entry = getEntry(activeKey);
+  var existing = entry.photos || [];
+  var slots = MAX_PHOTOS - existing.length;
+  if (slots <= 0) { document.getElementById('photoStatus').textContent = 'Max 5 photos per pub.'; return; }
+  files = files.slice(0, slots);
+  document.getElementById('photoStatus').textContent = 'Uploading ' + files.length + ' photo' + (files.length > 1 ? 's' : '') + '...';
+  setSyncStatus('syncing', 'Uploading photo...');
+  var uploaded = 0;
+  files.forEach(function(file) {
+    var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    var path = '50-pints/' + activeKey + '/' + Date.now() + '_' + Math.random().toString(36).substr(2,6) + '.' + ext;
+    fbStorage.ref(path).put(file).then(function(snap) {
+      return snap.ref.getDownloadURL();
+    }).then(function(url) {
+      var ent = getEntry(activeKey);
+      var ph = ent.photos || [];
+      ph.push(url);
+      ent.photos = ph;
+      localCache[activeKey] = ent;
+      saveCache();
+      debouncedSave(activeKey, ent);
+      renderPhotoGrid(ph);
+      refreshCard(activeKey, ent);
+      uploaded++;
+      if (uploaded === files.length) {
+        document.getElementById('photoStatus').textContent = 'Uploaded successfully.';
+        setSyncStatus('synced', 'Photo saved ✓');
+        setTimeout(function() { var s = document.getElementById('photoStatus'); if (s) s.textContent = ''; }, 3000);
+      }
+    }).catch(function(err) {
+      console.error('Upload error:', err);
+      document.getElementById('photoStatus').textContent = 'Upload failed — check connection.';
+      setSyncStatus('error', 'Photo upload failed');
+    });
+  });
+  e.target.value = '';
+});
 
 // ── DEDICATION MODAL ──────────────────────────────────
 (function() {
